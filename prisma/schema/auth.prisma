@@ -25,7 +25,6 @@ model User {
      sessions Session[]
      accounts Account[]
 
-     // 🔥 Relations to your app
      medicines Medicine[] @relation("SellerMedicines")
      orders    Order[]    @relation("CustomerOrders")
      reviews   Review[]

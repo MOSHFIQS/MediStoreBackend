@@ -2,8 +2,9 @@ import { NextFunction, Request, Response } from "express";
 import { auth as betterAuth } from '../lib/auth'
 
 export enum UserRole {
-    USER = "USER",
-    ADMIN = "ADMIN"
+     CUSTOMER = "CUSTOMER",
+     SELLER = "SELLER",
+     ADMIN = "ADMIN"
 }
 
 declare global {
@@ -14,7 +15,6 @@ declare global {
                 email: string;
                 name: string;
                 role: string;
-                emailVerified: boolean;
             }
         }
     }
@@ -35,19 +35,23 @@ const auth = (...roles: UserRole[]) => {
                 })
             }
 
-            if (!session.user.emailVerified) {
-                return res.status(403).json({
-                    success: false,
-                    message: "Email verification required. Please verfiy your email!"
-                })
-            }
+            console.log("getting session from middlewares",session);
+
+          //    if (session.user.status === "BANNED") {
+          //         return res.status(403).json({
+          //              success: false,
+          //              message: "Your account has been banned!"
+          //         })
+          //    }
+
+
+            
 
             req.user = {
                 id: session.user.id,
                 email: session.user.email,
                 name: session.user.name,
-                role: session.user.role as string,
-                emailVerified: session.user.emailVerified
+                role: session.user.role as string
             }
 
             if (roles.length && !roles.includes(req.user.role as UserRole)) {
