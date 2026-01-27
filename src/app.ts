@@ -19,6 +19,7 @@ app.use(express.json())
 // Routes
 app.use("/api/auth", authRouter)
 app.use("/api", medicineRouter)
+app.use("/api/categories", categoryRouter)
 
 app.get("/", (req, res) => {
      res.send("Hello, World!");
