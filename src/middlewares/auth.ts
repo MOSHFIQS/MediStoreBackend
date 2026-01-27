@@ -1,72 +1,61 @@
-import { NextFunction, Request, Response } from "express";
-import { auth as betterAuth } from '../lib/auth'
+import { Request, Response, NextFunction } from "express"
+import jwt from "jsonwebtoken"
+import status from "http-status"
+import { Role } from "../../generated/prisma/enums";
 
-export enum UserRole {
-     CUSTOMER = "CUSTOMER",
-     SELLER = "SELLER",
-     ADMIN = "ADMIN"
-}
 
 declare global {
-    namespace Express {
-        interface Request {
-            user?: {
-                id: string;
-                email: string;
-                name: string;
-                role: string;
-            }
-        }
-    }
+     namespace Express {
+          interface Request {
+               user?: {
+                    id: string;
+                    email: string;
+                    role: string;
+               }
+          }
+     }
 }
 
-const auth = (...roles: UserRole[]) => {
-    return async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            // get user session
-            const session = await betterAuth.api.getSession({
-                headers: req.headers as any
-            })
 
-            if (!session) {
-                return res.status(401).json({
+
+
+
+export const auth = (...allowedRoles: Role[]) => {
+     return (req: Request, res: Response, next: NextFunction) => {
+          const token = req.cookies.token
+
+          if (!token) {
+               return res.status(status.UNAUTHORIZED).json({
                     success: false,
-                    message: "You are not authorized!"
-                })
-            }
+                    message: "Not logged in",
+               })
+          }
 
-            console.log("getting session from middlewares",session);
+          try {
+               const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+                    id: string
+                    role: Role
+                    email: string
+               }
 
-          //    if (session.user.status === "BANNED") {
-          //         return res.status(403).json({
-          //              success: false,
-          //              message: "Your account has been banned!"
-          //         })
-          //    }
+               // attach user info to request
+               req.user = decoded
 
+               // if roles were passed → check permission
+               if (allowedRoles.length && !allowedRoles.includes(decoded.role)) {
+                    return res.status(status.FORBIDDEN).json({
+                         success: false,
+                         message: "You are not authorized",
+                    })
+               }
 
-            
-
-            req.user = {
-                id: session.user.id,
-                email: session.user.email,
-                name: session.user.name,
-                role: session.user.role as string
-            }
-
-            if (roles.length && !roles.includes(req.user.role as UserRole)) {
-                return res.status(403).json({
+               next()
+          } catch {
+               return res.status(status.UNAUTHORIZED).json({
                     success: false,
-                    message: "Forbidden! You don't have permission to access this resources!"
-                })
-            }
+                    message: "Invalid token",
+               })
+          }
+     }
+}
 
-            next()
-        } catch (err) {
-            next(err);
-        }
-
-    }
-};
-
-export default auth;
