@@ -1,5 +1,6 @@
 import { Response } from "express";
 
+
 type SendResponseType<T> = {
      statusCode: number;
      success: boolean;

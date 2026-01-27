@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import errorHandler from "./middlewares/globalErrorHandler";
 import { notFound } from "./middlewares/notFound";
 import { authRouter } from "./modules/auth/auth.route";
+import { medicineRouter } from "./modules/medicines/medicine.route";
 
 const app: Application = express();
 
@@ -17,6 +18,7 @@ app.use(express.json())
 
 // Routes
 app.use("/api/auth", authRouter)
+app.use("/api", medicineRouter)
 
 app.get("/", (req, res) => {
      res.send("Hello, World!");
