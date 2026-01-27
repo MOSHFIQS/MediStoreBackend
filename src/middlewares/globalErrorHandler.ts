@@ -1,22 +1,20 @@
 import { NextFunction, Request, Response } from "express"
 
 function errorHandler(
-    err: any,
-    req: Request,
-    res: Response,
-    next: NextFunction
+     err: any,
+     req: Request,
+     res: Response,
+     next: NextFunction
 ) {
-    let statusCode = 500;
-    let errorMessage = "Internal Server Error";
-    let errorDetails = err;
+ 
+     const statusCode = err.statusCode || 500
 
-
-
-    res.status(statusCode)
-    res.json({
-        message: errorMessage,
-        error: errorDetails
-    })
+     res.status(statusCode).json({
+          success: false,
+          message: err.message || "Internal Server Error",
+          stack: process.env.NODE_ENV === "development" ? err.stack : undefined
+     })
 }
+
 
 export default errorHandler;
