@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express"
 import jwt from "jsonwebtoken"
 import status from "http-status"
-import { Role } from "../../generated/prisma/enums";
+import { Role, UserStatus } from "../../generated/prisma/enums";
 
 
 declare global {
@@ -11,6 +11,7 @@ declare global {
                     id: string;
                     email: string;
                     role: string;
+                    status : string;
                }
           }
      }
@@ -36,7 +37,10 @@ export const auth = (...allowedRoles: Role[]) => {
                     id: string
                     role: Role
                     email: string
+                    status : string
                }
+
+              
 
                // attach user info to request
                req.user = decoded

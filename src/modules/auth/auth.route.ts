@@ -4,17 +4,6 @@ import { authController } from './auth.controller';
 const router = express.Router();
 
 
-// router.get(
-//      "/my-posts",
-//      auth(UserRole.USER, UserRole.ADMIN),
-//      PostController.getMyPosts
-// )
-
-// router.get(
-//      "/:postId",
-//      PostController.getPostById
-// )
-
 router.post(
      "/register",
      authController.signUpUser

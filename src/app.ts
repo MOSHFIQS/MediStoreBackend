@@ -5,6 +5,8 @@ import errorHandler from "./middlewares/globalErrorHandler";
 import { notFound } from "./middlewares/notFound";
 import { authRouter } from "./modules/auth/auth.route";
 import { medicineRouter } from "./modules/medicines/medicine.route";
+import { categoryRouter } from "./modules/categories/category.route";
+import { adminRouter } from "./modules/admin/admin.route";
 
 const app: Application = express();
 
@@ -20,6 +22,7 @@ app.use(express.json())
 app.use("/api/auth", authRouter)
 app.use("/api", medicineRouter)
 app.use("/api/categories", categoryRouter)
+app.use("/api/admin", adminRouter)
 
 app.get("/", (req, res) => {
      res.send("Hello, World!");

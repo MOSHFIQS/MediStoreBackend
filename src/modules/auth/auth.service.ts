@@ -28,12 +28,12 @@ const signUpUser = async (payload: RegisterData) => {
           data: {
                name,
                email,
-               password: hashed ,
+               password: hashed,
                role: role === "SELLER" ? "SELLER" : "CUSTOMER"
           }
      })
 
-     const token = jwt.sign({ id: user.id, role: user.role,email : user.email }, JWT_SECRET, { expiresIn: "7d" })
+     const token = jwt.sign({ id: user.id, role: user.role, email: user.email, status: user.status }, JWT_SECRET, { expiresIn: "7d" })
 
      return { user, token }
 }
@@ -51,7 +51,7 @@ const signInUser = async (payload: LoginData) => {
      const isMatch = await bcrypt.compare(password, user.password)
      if (!isMatch) throw new Error("Invalid credentials")
 
-     const token = jwt.sign({ id: user.id, role: user.role, email : user.email }, JWT_SECRET, { expiresIn: "7d" })
+     const token = jwt.sign({ id: user.id, role: user.role, email: user.email, status: user.status }, JWT_SECRET, { expiresIn: "7d" })
 
      return { user, token }
 }
@@ -59,7 +59,7 @@ const signInUser = async (payload: LoginData) => {
 
 
 const getCurrentUser = async (token: string) => {
-     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; role: string; email : string }
+     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; role: string; email: string }
      const user = await prisma.user.findUnique({ where: { id: decoded.id } })
      if (!user) throw new Error("User not found")
      return user
