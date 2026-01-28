@@ -18,7 +18,6 @@ const createCategory = async (req: Request, res: Response, next: NextFunction) =
                data: result
           })
      } catch (err) {
-          console.log(err);
           next(err)
      }
 }
