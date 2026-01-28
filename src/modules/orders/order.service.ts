@@ -80,6 +80,46 @@ const createOrder = async (userId: string, payload: CreateOrderPayload) => {
 
 
 
+const cancelOrder = async (userId: string, orderId: string) => {
+     return prisma.$transaction(async (tx) => {
+
+          const order = await tx.order.findFirst({
+               where: { id: orderId, customerId: userId },
+               include: { items: true }
+          })
+
+          if (!order) throw new Error("Order not found")
+
+          if (!["PLACED", "PROCESSING"].includes(order.status)) {
+               throw new Error("Order cannot be cancelled at this stage")
+          }
+
+          for (const item of order.items) {
+               await tx.medicine.update({
+                    where: { id: item.medicineId },
+                    data: {
+                         stock: {
+                              increment: item.quantity   
+                         }
+                    }
+               })
+          }
+
+          const updatedOrder = await tx.order.update({
+               where: { id: orderId },
+               data: { status: "CANCELLED" },
+               include: {
+                    items: { include: { medicine: true } }
+               }
+          })
+
+          return updatedOrder
+     })
+}
+
+
+
+
 const getMyOrders = async (userId: string) => {
      return prisma.order.findMany({
           where: { customerId: userId },
@@ -145,7 +185,6 @@ const updateOrderStatus = async (
      orderId: string,
      status: OrderStatus
 ) => {
-     // Check seller owns at least one item
      const order = await prisma.order.findFirst({
           where: {
                id: orderId,
@@ -169,6 +208,7 @@ const updateOrderStatus = async (
 
 export const orderService = {
      createOrder,
+     cancelOrder,
      getMyOrders,
      getOrderById,
      getSellerOrders,

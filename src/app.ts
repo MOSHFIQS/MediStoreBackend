@@ -13,7 +13,7 @@ const app: Application = express();
 
 app.use(cors({
      origin: process.env.APP_URL || "http://localhost:4000",
-     credentials: true // allow cookies
+     credentials: true 
 }))
 
 app.use(cookieParser())
@@ -30,10 +30,8 @@ app.get("/", (req, res) => {
      res.send("Hello, World!");
 })
 
-// 404 handler
 app.use(notFound)
 
-// Global error handler
 app.use(errorHandler)
 
 export default app

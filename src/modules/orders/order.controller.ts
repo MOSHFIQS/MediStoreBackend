@@ -22,6 +22,27 @@ const createOrder = async (req: Request, res : Response, next : NextFunction) =>
      }
 }
 
+const cancelOrder = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+          const orderId = req.params.id as string
+
+          const order = await orderService.cancelOrder(
+               req.user!.id,
+               orderId
+          )
+
+          sendResponse(res, {
+               statusCode: status.OK,
+               success: true,
+               message: "Order cancelled successfully",
+               data: order,
+          })
+     } catch (e) {
+          next(e)
+     }
+}
+
+
 const getMyOrders = async (req: Request, res : Response, next : NextFunction) => {
      try {
           const orders = await orderService.getMyOrders(req.user!.id)
@@ -86,6 +107,7 @@ const updateOrderStatus = async (req: Request, res: Response, next: NextFunction
 
 export const orderController = {
      createOrder,
+     cancelOrder,
      getMyOrders,
      getOrderById,
      getSellerOrders,
