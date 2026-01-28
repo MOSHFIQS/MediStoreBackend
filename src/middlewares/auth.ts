@@ -40,7 +40,12 @@ export const auth = (...allowedRoles: Role[]) => {
                     status : string
                }
 
-              
+               if (decoded.status === UserStatus.BANNED){
+                    return res.status(status.FORBIDDEN).json({
+                         success: false,
+                         message: "Your account has been banned"
+                    })
+               }
 
                // attach user info to request
                req.user = decoded
