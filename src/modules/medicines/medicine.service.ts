@@ -32,7 +32,7 @@ const createMedicine = async (userId: string, payload: createMadecine) => {
 
 const updateMedicine = async (userId: string, id: string, payload: any) => {
      return prisma.medicine.update({
-          where: { id, sellerId: userId }, // seller can edit only his own medicine
+          where: { id, sellerId: userId }, 
           data: payload
      })
 }
@@ -56,12 +56,12 @@ const getAllMedicines = async (query: any) => {
 
      const where: Prisma.MedicineWhereInput = {}
 
-     // Category filter
+    
      if (category) {
           where.categoryId = String(category)
      }
 
-     // Search filter
+ 
      if (search) {
           where.name = {
                contains: String(search),

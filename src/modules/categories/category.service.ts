@@ -5,7 +5,7 @@ import { prisma } from "../../lib/prisma"
 const createCategory = async (payload: { name: string }) => {
      const { name } = payload
 
-     // prevent duplicate category
+  
      const existing = await prisma.category.findFirst({
           where: { name: { equals: name, mode: "insensitive" } }
      })

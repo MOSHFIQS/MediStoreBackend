@@ -18,7 +18,7 @@ const createOrder = async (userId: string, payload: CreateOrderPayload) => {
      const medicineIds = items.map(i => i.medicineId)
 
      return prisma.$transaction(async (tx) => {
-          // 1️⃣ Get medicines with stock
+        
           const medicines = await tx.medicine.findMany({
                where: { id: { in: medicineIds } }
           })
@@ -35,7 +35,7 @@ const createOrder = async (userId: string, payload: CreateOrderPayload) => {
 
                const medicine = medicines.find(m => m.id === item.medicineId)!
 
-               // ❌ Not enough stock
+        
                if (medicine.stock < item.quantity) {
                     throw new Error(`${medicine.name} out of stock`)
                }
@@ -48,7 +48,7 @@ const createOrder = async (userId: string, payload: CreateOrderPayload) => {
                     price: medicine.price
                })
 
-               // 2️⃣ Reduce stock
+         
                await tx.medicine.update({
                     where: { id: medicine.id },
                     data: {
@@ -59,7 +59,7 @@ const createOrder = async (userId: string, payload: CreateOrderPayload) => {
                })
           }
 
-          // 3️⃣ Create order
+  
           const order = await tx.order.create({
                data: {
                     customerId: userId,
