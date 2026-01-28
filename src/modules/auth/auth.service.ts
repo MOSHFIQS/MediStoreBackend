@@ -9,6 +9,7 @@ interface RegisterData {
      email: string
      password: string
      role?: "CUSTOMER" | "SELLER"
+     image: string | null
 }
 
 interface LoginData {
@@ -17,7 +18,7 @@ interface LoginData {
 }
 
 const signUpUser = async (payload: RegisterData) => {
-     const { name, email, password, role } = payload
+     const { name, email, password, role ,image} = payload
 
      const existing = await prisma.user.findUnique({ where: { email } })
      if (existing) throw new Error("Email already exists")
@@ -29,7 +30,8 @@ const signUpUser = async (payload: RegisterData) => {
                name,
                email,
                password: hashed,
-               role: role === "SELLER" ? "SELLER" : "CUSTOMER"
+               role: role === "SELLER" ? "SELLER" : "CUSTOMER",
+               image
           }
      })
 
