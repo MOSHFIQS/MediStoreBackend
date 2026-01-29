@@ -5,16 +5,16 @@ import { orderController } from "./order.controller"
 
 const router = Router()
 
-router.post("/orders", auth(Role.CUSTOMER), orderController.createOrder)
-router.get("/orders", auth(Role.CUSTOMER), orderController.getMyOrders)
-router.get("/orders/:id", auth(Role.CUSTOMER), orderController.getOrderById)
+router.post("/", auth(Role.CUSTOMER), orderController.createOrder)
+router.get("/", auth(Role.CUSTOMER), orderController.getMyOrders)
+router.get("/:id", auth(Role.CUSTOMER), orderController.getOrderById)
 
-router.patch("/orders/:id",auth(Role.CUSTOMER),orderController.cancelOrder)
+router.patch("/:id",auth(Role.CUSTOMER),orderController.cancelOrder)
 
 
 
-router.get("/seller/orders", auth(Role.SELLER), orderController.getSellerOrders)
-router.patch("/seller/orders/:id", auth(Role.SELLER), orderController.updateOrderStatus)
+router.get("/seller", auth(Role.SELLER), orderController.getSellerOrders)
+router.patch("/seller/:id", auth(Role.SELLER), orderController.updateOrderStatus)
 
 
 

@@ -9,7 +9,7 @@ const signUpUser = async (req: Request, res: Response, next: NextFunction) => {
 
           res.cookie("token", result.token, {
                httpOnly: true,
-               secure: false,
+               secure: process.env.NODE_ENV === "production",
                sameSite: "lax",
                maxAge: 7 * 24 * 60 * 60 * 1000
           })
@@ -31,7 +31,7 @@ const signInUser = async (req: Request, res: Response, next: NextFunction) => {
 
           res.cookie("token", result.token, {
                httpOnly: true,
-               secure: false,
+               secure: process.env.NODE_ENV === "production",
                sameSite: "lax",
                maxAge: 7 * 24 * 60 * 60 * 1000
           })

@@ -5,13 +5,13 @@ import { Role } from "../../../generated/prisma/enums"
 
 const router = Router()
 
-router.post("/seller/medicines", auth(Role.SELLER), medicineController.createMedicine)
-router.put("/seller/medicines/:id", auth(Role.SELLER), medicineController.updateMedicine)
-router.delete("/seller/medicines/:id", auth(Role.SELLER),  medicineController.deleteMedicine)
+router.post("/seller", auth(Role.SELLER), medicineController.createMedicine)
+router.put("/seller/:id", auth(Role.SELLER), medicineController.updateMedicine)
+router.delete("/seller/:id", auth(Role.SELLER),  medicineController.deleteMedicine)
 
 
 
-router.get("/medicines", medicineController.getAllMedicines)
-router.get("/medicines/:id", medicineController.getMedicineById)
+router.get("/", medicineController.getAllMedicines)
+router.get("/:id", medicineController.getMedicineById)
 
 export const medicineRouter = router

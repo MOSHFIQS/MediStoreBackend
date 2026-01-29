@@ -18,7 +18,7 @@ interface LoginData {
 }
 
 const signUpUser = async (payload: RegisterData) => {
-     const { name, email, password, role ,image} = payload
+     const { name, email, password, role, image } = payload
 
      const existing = await prisma.user.findUnique({ where: { email } })
      if (existing) throw new Error("Email already exists")
@@ -31,14 +31,23 @@ const signUpUser = async (payload: RegisterData) => {
                email,
                password: hashed,
                role: role === "SELLER" ? "SELLER" : "CUSTOMER",
-               image
-          }
+               image,
+          },
      })
 
-     const token = jwt.sign({ id: user.id, role: user.role, email: user.email, status: user.status }, JWT_SECRET, { expiresIn: "7d" })
+     const token = jwt.sign(
+          { id: user.id, role: user.role, email: user.email, status: user.status },
+          JWT_SECRET,
+          { expiresIn: "7d" }
+     )
 
-     return { user, token }
+     const { password: _, ...safeUser } = user
+
+     console.log(token);
+
+     return { user: safeUser, token }
 }
+
 
 
 
@@ -47,16 +56,22 @@ const signInUser = async (payload: LoginData) => {
      const { email, password } = payload
 
      const user = await prisma.user.findUnique({ where: { email } })
-
      if (!user) throw new Error("Invalid credentials")
 
      const isMatch = await bcrypt.compare(password, user.password)
      if (!isMatch) throw new Error("Invalid credentials")
 
-     const token = jwt.sign({ id: user.id, role: user.role, email: user.email, status: user.status }, JWT_SECRET, { expiresIn: "7d" })
+     const token = jwt.sign(
+          { id: user.id, role: user.role, email: user.email, status: user.status },
+          JWT_SECRET,
+          { expiresIn: "7d" }
+     )
 
-     return { user, token }
+     const { password: _, ...safeUser } = user
+
+     return { user: safeUser, token }
 }
+
 
 
 
