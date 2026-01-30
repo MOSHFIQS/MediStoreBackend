@@ -39,9 +39,24 @@ const updateMedicine = async (userId: string, id: string, payload: any) => {
 
 
 
+
 const deleteMedicine = async (userId: string, id: string) => {
      return prisma.medicine.delete({
           where: { id, sellerId: userId }
+     })
+}
+
+
+
+const getSellerMedicines = async (sellerId: string) => {
+     return prisma.medicine.findMany({
+          where: { sellerId },
+          include: {
+               category: true, 
+          },
+          orderBy: {
+               createdAt: "desc",
+          },
      })
 }
 
@@ -96,6 +111,7 @@ export const medicineService = {
      createMedicine,
      updateMedicine,
      deleteMedicine,
+     getSellerMedicines,
      getAllMedicines,
      getMedicineById
 }

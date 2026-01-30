@@ -8,6 +8,7 @@ const router = Router()
 router.post("/seller", auth(Role.SELLER), medicineController.createMedicine)
 router.put("/seller/:id", auth(Role.SELLER), medicineController.updateMedicine)
 router.delete("/seller/:id", auth(Role.SELLER),  medicineController.deleteMedicine)
+router.get("/seller", auth(Role.SELLER),  medicineController.getSellerMedicines)
 
 
 

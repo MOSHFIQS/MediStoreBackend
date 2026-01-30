@@ -77,6 +77,7 @@ const getOrderById = async (req: Request, res : Response, next : NextFunction) =
 const getSellerOrders = async (req: Request, res: Response, next: NextFunction) => {
      try {
           const orders = await orderService.getSellerOrders(req.user!.id)
+          console.log(req.user);
           sendResponse(res, {
                statusCode : status.OK,
                success: true,

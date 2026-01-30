@@ -17,26 +17,35 @@ const createOrder = async (userId: string, payload: CreateOrderPayload) => {
 
      const medicineIds = items.map(i => i.medicineId)
 
+     // ✅ STEP 1: READ OUTSIDE TRANSACTION (VERY IMPORTANT)
+     const medicines = await prisma.medicine.findMany({
+          where: { id: { in: medicineIds } },
+     })
+
+     if (medicines.length !== items.length) {
+          throw new Error("Some medicines not found")
+     }
+
+     // ✅ STEP 2: SHORT TRANSACTION — ONLY WRITES
      return prisma.$transaction(async (tx) => {
-        
-          const medicines = await tx.medicine.findMany({
-               where: { id: { in: medicineIds } }
-          })
-
-          if (medicines.length !== items.length) {
-               throw new Error("Some medicines not found")
-          }
-
           let totalPrice = 0
-
           const orderItemsData = []
 
           for (const item of items) {
-
                const medicine = medicines.find(m => m.id === item.medicineId)!
 
-        
-               if (medicine.stock < item.quantity) {
+               // 🔒 Atomic stock check + decrement (prevents overselling)
+               const updated = await tx.medicine.updateMany({
+                    where: {
+                         id: medicine.id,
+                         stock: { gte: item.quantity },
+                    },
+                    data: {
+                         stock: { decrement: item.quantity },
+                    },
+               })
+
+               if (updated.count === 0) {
                     throw new Error(`${medicine.name} out of stock`)
                }
 
@@ -45,77 +54,74 @@ const createOrder = async (userId: string, payload: CreateOrderPayload) => {
                orderItemsData.push({
                     medicineId: medicine.id,
                     quantity: item.quantity,
-                    price: medicine.price
-               })
-
-         
-               await tx.medicine.update({
-                    where: { id: medicine.id },
-                    data: {
-                         stock: {
-                              decrement: item.quantity
-                         }
-                    }
+                    price: medicine.price,
                })
           }
 
-  
-          const order = await tx.order.create({
+          // 🧾 Create order AFTER stock is secured
+          return tx.order.create({
                data: {
                     customerId: userId,
                     address,
                     totalPrice,
                     items: {
-                         create: orderItemsData
-                    }
+                         create: orderItemsData,
+                    },
                },
                include: {
-                    items: { include: { medicine: true } }
-               }
+                    items: { include: { medicine: true } },
+               },
           })
-
-          return order
-     })
+     },
+          {
+               timeout: 15000, // ⏱ prevents early transaction timeout
+          })
 }
+
+export default createOrder
+
 
 
 
 const cancelOrder = async (userId: string, orderId: string) => {
+     // Step 1: Read order OUTSIDE the transaction (fast)
+     const order = await prisma.order.findFirst({
+          where: { id: orderId, customerId: userId },
+          include: { items: true },
+     });
+
+     if (!order) throw new Error("Order not found");
+     if (!["PLACED", "PROCESSING"].includes(order.status)) {
+          throw new Error("Order cannot be cancelled at this stage");
+     }
+
+     // Step 2: Collect medicineId + quantity mapping
+     const stockUpdates = order.items.map(item => ({
+          id: item.medicineId,
+          quantity: item.quantity,
+     }));
+
+     // Step 3: Short transaction — batch updates + order status
      return prisma.$transaction(async (tx) => {
-
-          const order = await tx.order.findFirst({
-               where: { id: orderId, customerId: userId },
-               include: { items: true }
-          })
-
-          if (!order) throw new Error("Order not found")
-
-          if (!["PLACED", "PROCESSING"].includes(order.status)) {
-               throw new Error("Order cannot be cancelled at this stage")
-          }
-
-          for (const item of order.items) {
+          // Batch update medicines stock using updateMany
+          for (const update of stockUpdates) {
                await tx.medicine.update({
-                    where: { id: item.medicineId },
-                    data: {
-                         stock: {
-                              increment: item.quantity   
-                         }
-                    }
-               })
+                    where: { id: update.id },
+                    data: { stock: { increment: update.quantity } },
+               });
           }
 
+          // Update order status
           const updatedOrder = await tx.order.update({
                where: { id: orderId },
                data: { status: "CANCELLED" },
-               include: {
-                    items: { include: { medicine: true } }
-               }
-          })
+               include: { items: { include: { medicine: true } } },
+          });
 
-          return updatedOrder
-     })
-}
+          return updatedOrder;
+     }, { timeout: 15000 }); // optional timeout
+};
+
 
 
 

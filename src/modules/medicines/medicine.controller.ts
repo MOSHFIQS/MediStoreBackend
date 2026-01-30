@@ -71,6 +71,28 @@ const deleteMedicine = async (req: Request, res: Response, next: NextFunction) =
      }
 }
 
+const getSellerMedicines = async (
+     req: Request,
+     res: Response,
+     next: NextFunction
+) => {
+     try {
+          const sellerId = req.user!.id
+          console.log(sellerId);
+
+          const medicines = await medicineService.getSellerMedicines(sellerId)
+
+          sendResponse(res, {
+               statusCode: 200,
+               success: true,
+               message: "Seller medicines retrieved successfully",
+               data: medicines,
+          })
+     } catch (err) {
+          next(err)
+     }
+}
+
 
 
 const getAllMedicines = async (req: Request, res: Response, next: NextFunction) => {
@@ -116,6 +138,7 @@ export const medicineController = {
      createMedicine,
      updateMedicine,
      deleteMedicine,
+     getSellerMedicines,
      getAllMedicines,
      getMedicineById
 }
