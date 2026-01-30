@@ -7,8 +7,8 @@ const router = Router()
 
 router.post("/", auth(Role.CUSTOMER), orderController.createOrder)
 router.get("/", auth(Role.CUSTOMER), orderController.getMyOrders)
+router.get("/seller/my-orders", auth(Role.SELLER), orderController.getSellerOrders)   //tricks
 router.get("/:id", auth(Role.CUSTOMER), orderController.getOrderById)
-router.get("/seller", auth(Role.SELLER), orderController.getSellerOrders)   //tricks
 router.patch("/:id",auth(Role.CUSTOMER),orderController.cancelOrder)
 router.patch("/seller/:id", auth(Role.SELLER), orderController.updateOrderStatus)
 
