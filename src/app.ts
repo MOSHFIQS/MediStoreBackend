@@ -8,9 +8,23 @@ import router from "./routes";
 const app: Application = express();
 
 app.use(cors({
-     origin: [process.env.APP_URL || "http://localhost:3000", "http://localhost:3000/","https://medi-store-frontend-sooty.vercel.app"],
-     credentials: true 
-}))
+     origin: function (origin, callback) {
+          const allowedOrigins = [
+               process.env.LOCAL_CLIENT_URL,
+               process.env.PROD_CLIENT_URL,
+          ];
+
+          if (!origin) return callback(null, true);
+
+          if (allowedOrigins.includes(origin)) {
+               callback(null, true);
+          } else {
+               callback(new Error("Not allowed by CORS"));
+          }
+     },
+     credentials: true,
+}));
+
 
 app.use(cookieParser())
 app.use(express.json())

@@ -11,7 +11,8 @@ declare global {
                     id: string;
                     email: string;
                     role: string;
-                    status : string;
+                    status: string;
+                    name: string
                }
           }
      }
@@ -23,7 +24,8 @@ declare global {
 
 export const auth = (...allowedRoles: Role[]) => {
      return (req: Request, res: Response, next: NextFunction) => {
-          const token = req.cookies.medi_store_cookie
+          const token = req.cookies.token
+          console.log("token",token);
 
           if (!token) {
                return res.status(status.UNAUTHORIZED).json({
@@ -37,10 +39,11 @@ export const auth = (...allowedRoles: Role[]) => {
                     id: string
                     role: Role
                     email: string
-                    status : string
+                    status: string,
+                    name: string
                }
 
-               if (decoded.status === UserStatus.BANNED){
+               if (decoded.status === UserStatus.BANNED) {
                     return res.status(status.FORBIDDEN).json({
                          success: false,
                          message: "Your account has been banned"
