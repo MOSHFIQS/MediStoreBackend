@@ -1,111 +1,115 @@
-import { Prisma } from "../../../generated/prisma/client"
-import { prisma } from "../../lib/prisma"
+import { Prisma } from "../../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
 
-
-interface createMadecine {
-     name: string
-     price: number
-     stock: number
-     categoryId: string
-     sellerId: string
-     description: string
+interface createMedicinePayload {
+     name: string;
+     price: number;
+     stock: number;
+     categoryId: string;
+     sellerId: string;
+     description: string;
 }
 
-const createMedicine = async (userId: string, payload: createMadecine) => {
-     const categories = await prisma.category.findUnique({
-          where: {
-               id: payload.categoryId
+const createMedicine = async (userId: string, payload: createMedicinePayload) => {
+     try {
+          const category = await prisma.category.findUnique({
+               where: { id: payload.categoryId }
+          });
+
+          if (!category) {
+               throw new Error("This category does not exist");
           }
-     })
-     if (!categories) {
-          throw new Error("this category  does not exists")
+
+          return await prisma.medicine.create({
+               data: { ...payload, sellerId: userId }
+          });
+     } catch (err: any) {
+          console.error("Create medicine error:", err);
+          throw new Error(err.message || "Failed to create medicine");
      }
-
-
-     return prisma.medicine.create({
-          data: {
-               ...payload,
-               sellerId: userId
-          }
-     })
-}
+};
 
 const updateMedicine = async (userId: string, id: string, payload: any) => {
-     return prisma.medicine.update({
-          where: { id, sellerId: userId }, 
-          data: payload
-     })
-}
-
-
-
+     try {
+          return await prisma.medicine.update({
+               where: { id, sellerId: userId },
+               data: payload
+          });
+     } catch (err: any) {
+          console.error("Update medicine error:", err);
+          throw new Error(err.message || "Failed to update medicine");
+     }
+};
 
 const deleteMedicine = async (userId: string, id: string) => {
-     return prisma.medicine.delete({
-          where: { id, sellerId: userId }
-     })
-}
+     try {
+          const orderItemCount = await prisma.orderItem.count({
+               where: { medicineId: id }
+          });
 
+          if (orderItemCount > 0) {
+               throw new Error("Cannot delete medicine: it has associated orders");
+          }
 
+          return await prisma.medicine.delete({
+               where: { id, sellerId: userId }
+          });
+     } catch (err: any) {
+          console.error("Delete medicine error:", err);
+          throw new Error(err.message || "Failed to delete medicine");
+     }
+};
 
 const getSellerMedicines = async (sellerId: string) => {
-     return prisma.medicine.findMany({
-          where: { sellerId },
-          include: {
-               category: true, 
-          },
-          orderBy: {
-               createdAt: "desc",
-          },
-     })
-}
-
-
-
-
-
-
+     try {
+          return await prisma.medicine.findMany({
+               where: { sellerId },
+               include: { category: true },
+               orderBy: { createdAt: "desc" }
+          });
+     } catch (err: any) {
+          console.error("Get seller medicines error:", err);
+          throw new Error(err.message || "Failed to fetch seller medicines");
+     }
+};
 
 const getAllMedicines = async (query: any) => {
-     const { category, search } = query
+     try {
+          const { categoryId, search } = query;
+          const where: Prisma.MedicineWhereInput = {};
 
-     const where: Prisma.MedicineWhereInput = {}
-
-    
-     if (category) {
-          where.categoryId = String(category)
-     }
-
- 
-     if (search) {
-          where.name = {
-               contains: String(search),
-               mode: "insensitive"
+          if (categoryId) where.categoryId = String(categoryId);
+          if (search) {
+               where.name = { contains: String(search), mode: "insensitive" };
           }
+
+          return await prisma.medicine.findMany({
+               where,
+               include: {
+                    category: true,
+                    seller: { select: { id: true, name: true } }
+               }
+          });
+     } catch (err: any) {
+          console.error("Get all medicines error:", err);
+          throw new Error(err.message || "Failed to fetch medicines");
      }
-
-     const medicines = await prisma.medicine.findMany({
-          where,
-          include: {
-               category: true,
-               seller: { select: { id: true, name: true } }
-          }
-     })
-
-     return medicines
-}
+};
 
 const getMedicineById = async (id: string) => {
-     const medicine = await prisma.medicine.findUnique({
-          where: { id },
-          include: {
-               category: true,
-               seller: { select: { id: true, name: true } }
-          }
-     })
-
-     return medicine
-}
+     try {
+          return await prisma.medicine.findUnique({
+               where: { id },
+               include: {
+                    category: true,
+                    seller: { select: { id: true, name: true } }
+               }
+          });
+     } catch (err: any) {
+          console.error("Get medicine by id error:", err);
+          throw new Error(err.message || "Failed to fetch medicine");
+     }
+};
 
 export const medicineService = {
      createMedicine,
@@ -114,4 +118,4 @@ export const medicineService = {
      getSellerMedicines,
      getAllMedicines,
      getMedicineById
-}
+};

@@ -8,14 +8,14 @@ import router from "./routes";
 const app: Application = express();
 
 app.use(cors({
-     origin: process.env.APP_URL || "http://localhost:3000",
+     origin: [process.env.APP_URL || "http://localhost:3000", "http://localhost:3000/","https://medi-store-frontend-sooty.vercel.app"],
      credentials: true 
 }))
 
 app.use(cookieParser())
 app.use(express.json())
 
-// Routes
+
 app.use("/api", router)
 
 app.get("/", (req : Request, res : Response) => {
