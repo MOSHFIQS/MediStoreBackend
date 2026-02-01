@@ -49,28 +49,5 @@ const signInUser = async (req: Request, res: Response, next: NextFunction) => {
      }
 }
 
-const getMe = async (req: Request, res: Response, next: NextFunction) => {
-     try {
-          const token = req.cookies.token
-          if (!token) {
-               return sendResponse(res, {
-                    statusCode: status.UNAUTHORIZED,
-                    success: false,
-                    message: "Not logged in"
-               })
-          }
 
-          const user = await authService.getCurrentUser(token)
-
-          sendResponse(res, {
-               statusCode: status.OK,
-               success: true,
-               message: "Current user fetched",
-               data: { user }
-          })
-     } catch (err) {
-          next(err)
-     }
-}
-
-export const authController = { signUpUser, signInUser, getMe }
+export const authController = { signUpUser, signInUser}

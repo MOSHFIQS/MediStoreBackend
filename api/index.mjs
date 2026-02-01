@@ -146,13 +146,7 @@ var signInUser = async (payload) => {
   const { password: _, ...safeUser } = user;
   return { user: safeUser, token };
 };
-var getCurrentUser = async (token) => {
-  const decoded = jwt.verify(token, JWT_SECRET);
-  const user = await prisma.user.findUnique({ where: { id: decoded.id } });
-  if (!user) throw new Error("User not found");
-  return user;
-};
-var authService = { signUpUser, signInUser, getCurrentUser };
+var authService = { signUpUser, signInUser };
 
 // src/utils/sendResponse.ts
 var sendResponse = (res, payload) => {
@@ -195,28 +189,7 @@ var signInUser2 = async (req, res, next) => {
     next(err);
   }
 };
-var getMe = async (req, res, next) => {
-  try {
-    const token = req.cookies.token;
-    if (!token) {
-      return sendResponse_default(res, {
-        statusCode: status.UNAUTHORIZED,
-        success: false,
-        message: "Not logged in"
-      });
-    }
-    const user = await authService.getCurrentUser(token);
-    sendResponse_default(res, {
-      statusCode: status.OK,
-      success: true,
-      message: "Current user fetched",
-      data: { user }
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-var authController = { signUpUser: signUpUser2, signInUser: signInUser2, getMe };
+var authController = { signUpUser: signUpUser2, signInUser: signInUser2 };
 
 // src/modules/auth/auth.route.ts
 var router = express.Router();
@@ -228,7 +201,6 @@ router.post(
   "/login",
   authController.signInUser
 );
-router.get("/me", authController.getMe);
 var authRouter = router;
 
 // src/modules/medicines/medicine.route.ts
@@ -450,6 +422,7 @@ import status3 from "http-status";
 var auth = (...allowedRoles) => {
   return (req, res, next) => {
     const token = req.cookies.token;
+    console.log("token", token);
     if (!token) {
       return res.status(status3.UNAUTHORIZED).json({
         success: false,
@@ -1022,6 +995,10 @@ var moduleRoutes = [
   {
     path: "/review",
     route: reviewRouter
+  },
+  {
+    path: "/user",
+    route: reviewRouter
   }
 ];
 moduleRoutes.forEach((route) => router7.use(route.path, route.route));
@@ -1030,7 +1007,18 @@ var routes_default = router7;
 // src/app.ts
 var app = express2();
 app.use(cors({
-  origin: [process.env.APP_URL || "http://localhost:3000", "http://localhost:3000/", "https://medi-store-frontend-sooty.vercel.app"],
+  origin: function(origin, callback) {
+    const allowedOrigins = [
+      process.env.LOCAL_CLIENT_URL,
+      process.env.PROD_CLIENT_URL
+    ];
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
 app.use(cookieParser());

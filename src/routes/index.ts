@@ -34,6 +34,10 @@ const moduleRoutes = [
           path: '/review',
           route: reviewRouter,
      },
+     {
+          path: '/user',
+          route: reviewRouter,
+     },
 
 ];
 

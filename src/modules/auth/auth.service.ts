@@ -75,13 +75,7 @@ const signInUser = async (payload: LoginData) => {
 
 
 
-const getCurrentUser = async (token: string) => {
-     const decoded = jwt.verify(token, JWT_SECRET) as { id: string; role: string; email: string }
-     const user = await prisma.user.findUnique({ where: { id: decoded.id } })
-     if (!user) throw new Error("User not found")
-     return user
-}
 
 
 
-export const authService = { signUpUser, signInUser, getCurrentUser }
+export const authService = { signUpUser, signInUser }
