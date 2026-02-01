@@ -23,7 +23,7 @@ declare global {
 
 export const auth = (...allowedRoles: Role[]) => {
      return (req: Request, res: Response, next: NextFunction) => {
-          const token = req.cookies.token
+          const token = req.cookies.medi_store_cookie
 
           if (!token) {
                return res.status(status.UNAUTHORIZED).json({

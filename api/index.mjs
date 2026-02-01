@@ -170,17 +170,12 @@ import status from "http-status";
 var signUpUser2 = async (req, res, next) => {
   try {
     const result = await authService.signUpUser(req.body);
-    res.cookie("token", result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1e3
-    });
     sendResponse_default(res, {
       statusCode: status.CREATED,
       success: true,
       message: "User registered successfully",
-      data: { user: result.user }
+      // data: { user: result.user }
+      data: result
     });
   } catch (err) {
     next(err);
@@ -189,17 +184,12 @@ var signUpUser2 = async (req, res, next) => {
 var signInUser2 = async (req, res, next) => {
   try {
     const result = await authService.signInUser(req.body);
-    res.cookie("token", result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 7 * 24 * 60 * 60 * 1e3
-    });
     sendResponse_default(res, {
       statusCode: status.OK,
       success: true,
       message: "Login successful",
-      data: { user: result.user }
+      // data: { user: result.user }
+      data: result
     });
   } catch (err) {
     next(err);
