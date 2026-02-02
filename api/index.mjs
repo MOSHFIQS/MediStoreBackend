@@ -841,9 +841,36 @@ var updateUserStatus = async (userId, status9) => {
     data: { status: status9 }
   });
 };
+var getStatistics = async () => {
+  const totalUsers = await prisma.user.count();
+  const totalSellers = await prisma.user.count({ where: { role: "SELLER" } });
+  const totalCustomers = await prisma.user.count({ where: { role: "CUSTOMER" } });
+  const totalAdmins = await prisma.user.count({ where: { role: "ADMIN" } });
+  const totalMedicines = await prisma.medicine.count();
+  const totalOrders = await prisma.order.count();
+  const totalDeliveredOrders = await prisma.order.count({ where: { status: "DELIVERED" } });
+  const totalRevenue = await prisma.order.aggregate({
+    _sum: { totalPrice: true }
+  });
+  return {
+    users: {
+      total: totalUsers,
+      customers: totalCustomers,
+      sellers: totalSellers,
+      admins: totalAdmins
+    },
+    medicines: totalMedicines,
+    orders: {
+      total: totalOrders,
+      delivered: totalDeliveredOrders
+    },
+    revenue: totalRevenue._sum.totalPrice || 0
+  };
+};
 var adminService = {
   getAllUsers,
-  updateUserStatus
+  updateUserStatus,
+  getStatistics
 };
 
 // src/modules/admin/admin.controller.ts
@@ -876,15 +903,30 @@ var updateUserStatus2 = async (req, res, next) => {
     next(e);
   }
 };
+var adminStatistics = async (req, res, next) => {
+  try {
+    const stats = await adminService.getStatistics();
+    sendResponse_default(res, {
+      statusCode: status6.OK,
+      success: true,
+      message: "stats get successfully",
+      data: stats
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 var adminController = {
   getAllUsers: getAllUsers2,
-  updateUserStatus: updateUserStatus2
+  updateUserStatus: updateUserStatus2,
+  adminStatistics
 };
 
 // src/modules/admin/admin.route.ts
 var router5 = Router5();
 router5.get("/users", auth(Role.ADMIN), adminController.getAllUsers);
 router5.patch("/users/:id", auth(Role.ADMIN), adminController.updateUserStatus);
+router5.get("/statistics", adminController.adminStatistics);
 var adminRouter = router5;
 
 // src/modules/reviews/review.route.ts
