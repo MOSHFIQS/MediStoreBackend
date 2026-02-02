@@ -50,4 +50,7 @@ const signInUser = async (req: Request, res: Response, next: NextFunction) => {
 }
 
 
-export const authController = { signUpUser, signInUser}
+
+
+
+export const authController = { signUpUser, signInUser }

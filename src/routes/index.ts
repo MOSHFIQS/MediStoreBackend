@@ -5,6 +5,7 @@ import { orderRouter } from "../modules/orders/order.route";
 import { categoryRouter } from "../modules/categories/category.route";
 import { adminRouter } from "../modules/admin/admin.route";
 import { reviewRouter } from "../modules/reviews/review.route";
+import { userRouter } from './../modules/user/user.route';
 
 
 const router = Router();
@@ -36,7 +37,7 @@ const moduleRoutes = [
      },
      {
           path: '/user',
-          route: reviewRouter,
+          route: userRouter,
      },
 
 ];

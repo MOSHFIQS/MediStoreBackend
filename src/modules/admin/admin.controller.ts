@@ -33,9 +33,24 @@ const updateUserStatus = async (req: Request, res: Response, next: NextFunction)
      } catch (e) { next(e) }
 }
 
+const adminStatistics = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+          const stats = await adminService.getStatistics();
+          sendResponse(res, {
+               statusCode: status.OK,
+               success: true,
+               message: "stats get successfully",
+               data: stats
+          })
+     } catch (err) {
+          next(err)
+     }
+}
+
 
 
 export const adminController = {
      getAllUsers,
-     updateUserStatus
+     updateUserStatus,
+     adminStatistics
 }

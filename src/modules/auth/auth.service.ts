@@ -78,4 +78,5 @@ const signInUser = async (payload: LoginData) => {
 
 
 
+
 export const authService = { signUpUser, signInUser }

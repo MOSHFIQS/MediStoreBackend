@@ -24,7 +24,7 @@ function notFound(req, res) {
 }
 
 // src/routes/index.ts
-import { Router as Router7 } from "express";
+import { Router as Router8 } from "express";
 
 // src/modules/auth/auth.route.ts
 import express from "express";
@@ -607,7 +607,7 @@ var getSellerOrders = async (sellerId) => {
     }
   });
 };
-var updateOrderStatus = async (sellerId, orderId, status8) => {
+var updateOrderStatus = async (sellerId, orderId, status9) => {
   const order = await prisma.order.findFirst({
     where: {
       id: orderId,
@@ -621,7 +621,7 @@ var updateOrderStatus = async (sellerId, orderId, status8) => {
   if (!order) throw new Error("Order not found or not yours");
   return prisma.order.update({
     where: { id: orderId },
-    data: { status: status8 }
+    data: { status: status9 }
   });
 };
 var orderService = {
@@ -835,10 +835,10 @@ var getAllUsers = async () => {
     }
   });
 };
-var updateUserStatus = async (userId, status8) => {
+var updateUserStatus = async (userId, status9) => {
   return prisma.user.update({
     where: { id: userId },
-    data: { status: status8 }
+    data: { status: status9 }
   });
 };
 var adminService = {
@@ -969,8 +969,108 @@ router6.post("/", auth(Role.CUSTOMER), createReview);
 router6.get("/", getAllReviews);
 var reviewRouter = router6;
 
-// src/routes/index.ts
+// src/modules/user/user.route.ts
+import { Router as Router7 } from "express";
+
+// src/modules/user/user.controller.ts
+import status8 from "http-status";
+
+// src/modules/user/user.service.ts
+import jwt3 from "jsonwebtoken";
+var JWT_SECRET2 = process.env.JWT_SECRET || "supersecret";
+var getMe = async (token) => {
+  const decoded = jwt3.verify(token, JWT_SECRET2);
+  const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+  if (!user) throw new Error("User not found");
+  return user;
+};
+var updateProfile = async (token, payload) => {
+  const decoded = jwt3.verify(token, JWT_SECRET2);
+  delete payload.role;
+  delete payload.status;
+  delete payload.email;
+  delete payload.password;
+  const updatedUser = await prisma.user.update({
+    where: { id: decoded.id },
+    data: {
+      name: payload.name,
+      phone: payload.phone,
+      image: payload.image
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      status: true,
+      phone: true,
+      image: true,
+      createdAt: true
+    }
+  });
+  return updatedUser;
+};
+var userService = {
+  getMe,
+  updateProfile
+};
+
+// src/modules/user/user.controller.ts
+var getMe2 = async (req, res, next) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) {
+      return sendResponse_default(res, {
+        statusCode: status8.UNAUTHORIZED,
+        success: false,
+        message: "Not logged in"
+      });
+    }
+    const user = await userService.getMe(token);
+    sendResponse_default(res, {
+      statusCode: status8.OK,
+      success: true,
+      message: "Current user fetched",
+      data: { user }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var updateProfile2 = async (req, res, next) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) {
+      return sendResponse_default(res, {
+        statusCode: status8.UNAUTHORIZED,
+        success: false,
+        message: "Not logged in"
+      });
+    }
+    const user = await userService.updateProfile(token, req.body);
+    sendResponse_default(res, {
+      statusCode: status8.OK,
+      success: true,
+      message: "Profile updated successfully",
+      data: { user }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+var userController = {
+  getMe: getMe2,
+  updateProfile: updateProfile2
+};
+
+// src/modules/user/user.route.ts
 var router7 = Router7();
+router7.get("/me", auth(Role.CUSTOMER, Role.ADMIN, Role.SELLER), userController.getMe);
+router7.patch("/me", auth(Role.CUSTOMER, Role.ADMIN, Role.SELLER), userController.updateProfile);
+var userRouter = router7;
+
+// src/routes/index.ts
+var router8 = Router8();
 var moduleRoutes = [
   {
     path: "/auth",
@@ -998,11 +1098,11 @@ var moduleRoutes = [
   },
   {
     path: "/user",
-    route: reviewRouter
+    route: userRouter
   }
 ];
-moduleRoutes.forEach((route) => router7.use(route.path, route.route));
-var routes_default = router7;
+moduleRoutes.forEach((route) => router8.use(route.path, route.route));
+var routes_default = router8;
 
 // src/app.ts
 var app = express2();
