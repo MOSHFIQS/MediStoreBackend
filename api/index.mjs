@@ -926,7 +926,7 @@ var adminController = {
 var router5 = Router5();
 router5.get("/users", auth(Role.ADMIN), adminController.getAllUsers);
 router5.patch("/users/:id", auth(Role.ADMIN), adminController.updateUserStatus);
-router5.get("/statistics", adminController.adminStatistics);
+router5.get("/statistics", auth(Role.ADMIN), adminController.adminStatistics);
 var adminRouter = router5;
 
 // src/modules/reviews/review.route.ts
