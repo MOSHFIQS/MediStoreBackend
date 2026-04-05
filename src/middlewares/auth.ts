@@ -39,7 +39,7 @@ export const auth = (...allowedRoles: Role[]) => {
                     id: string
                     role: Role
                     email: string
-                    status: string,
+                    status: string
                     name: string
                }
 

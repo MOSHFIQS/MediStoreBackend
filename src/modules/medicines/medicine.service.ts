@@ -73,7 +73,7 @@ const getSellerMedicines = async (sellerId: string) => {
      }
 };
 
-const getAllMedicines = async (query: any) => {
+const getAllMedicines = async (query: { categoryId?: string; search?: string }) => {
      try {
           const { categoryId, search } = query;
           const where: Prisma.MedicineWhereInput = {};
@@ -87,8 +87,8 @@ const getAllMedicines = async (query: any) => {
                where,
                include: {
                     category: true,
-                    seller: { select: { id: true, name: true } }
-               }
+                    seller: { select: { id: true, name: true } },
+               },
           });
      } catch (err: any) {
           console.error("Get all medicines error:", err);
