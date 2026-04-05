@@ -9,23 +9,21 @@ enum UserStatus {
      BANNED
 }
 
-
-
 model User {
-  id            String      @id @default(uuid())
-  name          String
-  email         String      @unique
-  password      String 
-  image         String?
-  phone         String?
-  role          Role        @default(CUSTOMER)
-  status        UserStatus  @default(ACTIVE)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+     id        String     @id @default(uuid())
+     name      String
+     email     String     @unique
+     password  String
+     image     String?
+     phone     String?
+     role      Role       @default(CUSTOMER)
+     status    UserStatus @default(ACTIVE)
+     createdAt DateTime   @default(now())
+     updatedAt DateTime   @updatedAt
 
-  medicines     Medicine[] @relation("SellerMedicines")
-  orders        Order[]    @relation("CustomerOrders")
-  reviews       Review[]
+     medicines Medicine[] @relation("SellerMedicines")
+     orders    Order[]    @relation("CustomerOrders")
+     reviews   Review[]
 
-  @@map("user")
+     @@map("user")
 }

@@ -114,3 +114,229 @@ NODE_ENV=development or production
 ##  Admin Creadiatials
 email : admin@gmail.com
 password : 12345678
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+enum Role {
+     CUSTOMER
+     SELLER
+     ADMIN
+}
+
+enum UserStatus {
+     ACTIVE
+     BANNED
+}
+
+model User {
+     id        String     @id @default(uuid())
+     name      String
+     email     String     @unique
+     password  String
+     image     String?
+     phone     String?
+     role      Role       @default(CUSTOMER)
+     status    UserStatus @default(ACTIVE)
+     createdAt DateTime   @default(now())
+     updatedAt DateTime   @updatedAt
+
+     medicines Medicine[] @relation("SellerMedicines")
+     orders    Order[]    @relation("CustomerOrders")
+     reviews   Review[]
+
+     @@map("user")
+}
+
+
+
+model Category {
+     id        String     @id @default(uuid())
+     name      String     @unique
+     medicines Medicine[]
+     createdAt DateTime   @default(now())
+     updatedAt DateTime   @updatedAt
+}
+
+model Medicine {
+     id           String  @id @default(uuid())
+     name         String
+     description  String
+     price        Float
+     stock        Int
+     image        String?
+     manufacturer String?
+
+     categoryId String
+     category   Category @relation(fields: [categoryId], references: [id])
+
+     sellerId String
+     seller   User   @relation("SellerMedicines", fields: [sellerId], references: [id])
+
+     reviews    Review[]
+     orderItems OrderItem[]
+
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+}
+
+enum OrderStatus {
+     PLACED
+     PROCESSING
+     SHIPPED
+     DELIVERED
+     CANCELLED
+}
+
+model Order {
+     id         String @id @default(uuid())
+     customerId String
+     customer   User   @relation("CustomerOrders", fields: [customerId], references: [id])
+
+     status     OrderStatus @default(PLACED)
+     totalPrice Float
+     address    String
+
+     items OrderItem[]
+
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+}
+
+model OrderItem {
+     id      String @id @default(uuid())
+     orderId String
+     order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+     medicineId String
+     medicine   Medicine @relation(fields: [medicineId], references: [id])
+
+     quantity Int
+     price    Float
+}
+
+model Review {
+     id      String @id @default(uuid())
+     rating  Int
+     comment String
+
+     userId String
+     user   User   @relation(fields: [userId], references: [id])
+
+     medicineId String
+     medicine   Medicine @relation(fields: [medicineId], references: [id])
+
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+}
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+     provider = "prisma-client"
+     output   = "../../generated/prisma"
+}
+
+datasource db {
+     provider = "postgresql"
+}
