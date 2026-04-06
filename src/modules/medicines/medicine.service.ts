@@ -1,115 +1,113 @@
-import { Prisma } from "../../../generated/prisma/client";
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../../lib/prisma"
 
-interface createMedicinePayload {
-     name: string;
-     price: number;
-     stock: number;
-     categoryId: string;
-     sellerId: string;
-     description: string;
+interface CreateMedicinePayload {
+     name: string
+     genericName?: string
+     description: string
+     price: number
+     discountPrice?: number
+     stock: number
+     image?: string
+     images?: string[]
+     manufacturer?: string
+     brand?: string
+     dosageForm?: string
+     strength?: string
+     unit?: string
+     requiresPrescription?: boolean
+     categoryId: string
+     sku?: string
 }
 
-const createMedicine = async (userId: string, payload: createMedicinePayload) => {
-     try {
-          const category = await prisma.category.findUnique({
-               where: { id: payload.categoryId }
-          });
+const createMedicine = async (sellerId: string, payload: CreateMedicinePayload) => {
+     const slug = payload.name.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now()
+     return prisma.medicine.create({
+          data: { ...payload, sellerId, slug }
+     })
+}
 
-          if (!category) {
-               throw new Error("This category does not exist");
-          }
+const updateMedicine = async (id: string, sellerId: string, payload: Partial<CreateMedicinePayload>) => {
+     const medicine = await prisma.medicine.findFirst({ where: { id, sellerId } })
+     if (!medicine) throw new Error("Medicine not found or unauthorized")
+     return prisma.medicine.update({ where: { id }, data: payload })
+}
 
-          return await prisma.medicine.create({
-               data: { ...payload, sellerId: userId }
-          });
-     } catch (err: any) {
-          console.error("Create medicine error:", err);
-          throw new Error(err.message || "Failed to create medicine");
-     }
-};
-
-const updateMedicine = async (userId: string, id: string, payload: any) => {
-     try {
-          return await prisma.medicine.update({
-               where: { id, sellerId: userId },
-               data: payload
-          });
-     } catch (err: any) {
-          console.error("Update medicine error:", err);
-          throw new Error(err.message || "Failed to update medicine");
-     }
-};
-
-const deleteMedicine = async (userId: string, id: string) => {
-     try {
-          const orderItemCount = await prisma.orderItem.count({
-               where: { medicineId: id }
-          });
-
-          if (orderItemCount > 0) {
-               throw new Error("Cannot delete medicine: it has associated orders");
-          }
-
-          return await prisma.medicine.delete({
-               where: { id, sellerId: userId }
-          });
-     } catch (err: any) {
-          console.error("Delete medicine error:", err);
-          throw new Error(err.message || "Failed to delete medicine");
-     }
-};
+const deleteMedicine = async (id: string, sellerId: string) => {
+     const medicine = await prisma.medicine.findFirst({ where: { id, sellerId } })
+     if (!medicine) throw new Error("Medicine not found or unauthorized")
+     return prisma.medicine.update({ where: { id }, data: { isActive: false } })
+}
 
 const getSellerMedicines = async (sellerId: string) => {
-     try {
-          return await prisma.medicine.findMany({
-               where: { sellerId },
-               include: { category: true },
-               orderBy: { createdAt: "desc" }
-          });
-     } catch (err: any) {
-          console.error("Get seller medicines error:", err);
-          throw new Error(err.message || "Failed to fetch seller medicines");
+     return prisma.medicine.findMany({
+          where: { sellerId },
+          include: { category: true },
+          orderBy: { createdAt: "desc" }
+     })
+}
+
+const getAllMedicines = async (query: {
+     search?: string
+     categoryId?: string
+     minPrice?: string
+     maxPrice?: string
+     requiresPrescription?: string
+     page?: string
+     limit?: string
+}) => {
+     const page = parseInt(query.page || "1")
+     const limit = parseInt(query.limit || "12")
+     const skip = (page - 1) * limit
+
+     const where: any = { isActive: true }
+     if (query.search) {
+          where.OR = [
+               { name: { contains: query.search, mode: "insensitive" } },
+               { genericName: { contains: query.search, mode: "insensitive" } },
+               { manufacturer: { contains: query.search, mode: "insensitive" } }
+          ]
      }
-};
+     if (query.categoryId) where.categoryId = query.categoryId
+     if (query.minPrice || query.maxPrice) {
+          where.price = {}
+          if (query.minPrice) where.price.gte = parseFloat(query.minPrice)
+          if (query.maxPrice) where.price.lte = parseFloat(query.maxPrice)
+     }
+     if (query.requiresPrescription !== undefined) {
+          where.requiresPrescription = query.requiresPrescription === "true"
+     }
 
-const getAllMedicines = async (query: { categoryId?: string; search?: string }) => {
-     try {
-          const { categoryId, search } = query;
-          const where: Prisma.MedicineWhereInput = {};
-
-          if (categoryId) where.categoryId = String(categoryId);
-          if (search) {
-               where.name = { contains: String(search), mode: "insensitive" };
-          }
-
-          return await prisma.medicine.findMany({
+     const [data, total] = await Promise.all([
+          prisma.medicine.findMany({
                where,
-               include: {
-                    category: true,
-                    seller: { select: { id: true, name: true } },
-               },
-          });
-     } catch (err: any) {
-          console.error("Get all medicines error:", err);
-          throw new Error(err.message || "Failed to fetch medicines");
-     }
-};
+               include: { category: true, seller: { select: { id: true, name: true } } },
+               skip,
+               take: limit,
+               orderBy: { createdAt: "desc" }
+          }),
+          prisma.medicine.count({ where })
+     ])
+
+     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } }
+}
 
 const getMedicineById = async (id: string) => {
-     try {
-          return await prisma.medicine.findUnique({
-               where: { id },
-               include: {
-                    category: true,
-                    seller: { select: { id: true, name: true } }
-               }
-          });
-     } catch (err: any) {
-          console.error("Get medicine by id error:", err);
-          throw new Error(err.message || "Failed to fetch medicine");
-     }
-};
+     const medicine = await prisma.medicine.findFirst({
+          where: { id, isActive: true },
+          include: {
+               category: true,
+               seller: { select: { id: true, name: true, phone: true } },
+               reviews: {
+                    include: { user: { select: { id: true, name: true, image: true } } },
+                    orderBy: { createdAt: "desc" },
+                    take: 10
+               },
+               batches: { where: { isActive: true }, orderBy: { expiryDate: "asc" } }
+          }
+     })
+     if (!medicine) throw new Error("Medicine not found")
+     return medicine
+}
 
 export const medicineService = {
      createMedicine,
@@ -118,4 +116,4 @@ export const medicineService = {
      getSellerMedicines,
      getAllMedicines,
      getMedicineById
-};
+}

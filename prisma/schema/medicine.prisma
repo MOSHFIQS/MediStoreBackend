@@ -35,19 +35,18 @@ model Medicine {
      @@map("medicines")
 }
 
-
 model MedicineBatch {
-  id           String   @id @default(uuid())
-  medicineId   String
-  medicine     Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
-  batchNumber  String
-  quantity     Int
-  expiryDate   DateTime
-  costPrice    Float
-  isActive     Boolean  @default(true)
+     id          String   @id @default(uuid())
+     medicineId  String
+     medicine    Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+     batchNumber String
+     quantity    Int
+     expiryDate  DateTime
+     costPrice   Float
+     isActive    Boolean  @default(true)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
 
-  @@map("medicine_batches")
+     @@map("medicine_batches")
 }
