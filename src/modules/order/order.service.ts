@@ -57,8 +57,24 @@ const createOrder = async (customerId: string, payload: CreateOrderPayload) => {
                where: {
                     code: couponCode,
                     isActive: true,
-                    OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
-                    OR: [{ usageLimit: null }, { usageLimit: { gt: prisma.coupon.fields.usedCount } }] as any
+                    AND: [
+                         {
+                              OR: [
+                                   { expiresAt: null },
+                                   { expiresAt: { gt: new Date() } }
+                              ]
+                         },
+                         {
+                              OR: [
+                                   { usageLimit: null },
+                                   {
+                                        usageLimit: {
+                                             gt: prisma.coupon.fields.usedCount
+                                        }
+                                   }
+                              ]
+                         }
+                    ]
                }
           })
           if (!coupon) throw new Error("Invalid or expired coupon")
@@ -79,15 +95,29 @@ const createOrder = async (customerId: string, payload: CreateOrderPayload) => {
           const newOrder = await tx.order.create({
                data: {
                     customerId,
-                    addressId,
-                    addressSnapshot: addressSnapshot as any,
-                    couponId,
+
+                    ...(addressId !== undefined && {
+                         addressId: addressId ?? null
+                    }),
+
+                    ...(addressSnapshot !== undefined && {
+                         addressSnapshot: addressSnapshot as any
+                    }),
+
+                    ...(couponId !== undefined && {
+                         couponId: couponId ?? null
+                    }),
+
+                    ...(notes !== undefined && {
+                         notes: notes ?? null
+                    }),
+
                     couponDiscount,
                     subtotal,
                     shippingFee,
                     tax,
                     totalPrice,
-                    notes,
+
                     items: { create: orderItemsData }
                },
                include: { items: true }

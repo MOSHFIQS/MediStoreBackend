@@ -12,7 +12,13 @@ interface CouponPayload {
 }
 
 const createCoupon = async (payload: CouponPayload) => {
-     return prisma.coupon.create({ data: { ...payload, expiresAt: payload.expiresAt ? new Date(payload.expiresAt) : undefined } })
+     return prisma.coupon.create({
+          data: {
+               ...payload, expiresAt: payload.expiresAt
+                    ? new Date(payload.expiresAt)
+                    : null
+          }
+     })
 }
 
 const getAllCoupons = async () => {
@@ -22,7 +28,13 @@ const getAllCoupons = async () => {
 const updateCoupon = async (id: string, payload: Partial<CouponPayload>) => {
      return prisma.coupon.update({
           where: { id },
-          data: { ...payload, expiresAt: payload.expiresAt ? new Date(payload.expiresAt) : undefined }
+          data: {
+               ...payload, ...(payload.expiresAt !== undefined && {
+                    expiresAt: payload.expiresAt
+                         ? new Date(payload.expiresAt)
+                         : null
+               })
+          }
      })
 }
 
