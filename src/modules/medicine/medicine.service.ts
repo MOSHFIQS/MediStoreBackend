@@ -14,7 +14,6 @@ interface CreateMedicinePayload {
      dosageForm?: string
      strength?: string
      unit?: string
-     requiresPrescription?: boolean
      categoryId: string
      sku?: string
 }
@@ -51,7 +50,6 @@ const getAllMedicines = async (query: {
      categoryId?: string
      minPrice?: string
      maxPrice?: string
-     requiresPrescription?: string
      page?: string
      limit?: string
 }) => {
@@ -73,9 +71,7 @@ const getAllMedicines = async (query: {
           if (query.minPrice) where.price.gte = parseFloat(query.minPrice)
           if (query.maxPrice) where.price.lte = parseFloat(query.maxPrice)
      }
-     if (query.requiresPrescription !== undefined) {
-          where.requiresPrescription = query.requiresPrescription === "true"
-     }
+     
 
      const [data, total] = await Promise.all([
           prisma.medicine.findMany({

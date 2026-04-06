@@ -10,13 +10,16 @@ import { addressRouter } from './../modules/address/address.route';
 import { couponRouter } from './../modules/coupon/coupon.route';
 import { notificationRouter } from './../modules/notification/notification.route';
 import { paymentRouter } from './../modules/payment/payment.route';
-import { prescriptionRouter } from './../modules/prescription/prescription.route';
 import { FileRoutes } from "../modules/file/file.route";
 
 
 const router = Router();
 
 const moduleRoutes = [
+     {
+          path: '/file',
+          route: FileRoutes,
+     },
      {
           path: '/auth',
           route: authRouter,
@@ -60,14 +63,6 @@ const moduleRoutes = [
      {
           path: '/payment',
           route: paymentRouter,
-     },
-     {
-          path: '/prescription',
-          route: prescriptionRouter,
-     },
-     {
-          path: '/file',
-          route: FileRoutes,
      },
 
 ];

@@ -1,12 +1,13 @@
+import { envVars } from "../../config/env"
 import { prisma } from "../../lib/prisma"
 // @ts-ignore
 import SSLCommerzPayment from "sslcommerz-lts"
 
-const STORE_ID = process.env.SSL_STORE_ID!
-const STORE_PASS = process.env.SSL_STORE_PASS!
-const IS_LIVE = process.env.SSL_IS_LIVE === "true"
-const BACKEND_URL = process.env.BACKEND_URL! // e.g. https://yourapi.com
-const FRONTEND_URL = process.env.FRONTEND_URL! // e.g. https://yourapp.com
+const STORE_ID = envVars.SSLCOMMERZ.SSL_STORE_ID
+const STORE_PASS = envVars.SSLCOMMERZ.SSL_STORE_PASS
+const IS_LIVE = envVars.SSLCOMMERZ.SSL_IS_LIVE === "true"
+const BACKEND_URL = process.env.BACKEND_URL! || "http://localhost:5000" 
+const FRONTEND_URL = process.env.FRONTEND_URL! || "http://localhost:3000"
 
 const initiatePayment = async (orderId: string, customerId: string) => {
      const order = await prisma.order.findFirst({

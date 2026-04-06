@@ -19,7 +19,6 @@ model User {
      orders        Order[]        @relation("CustomerOrders")
      reviews       Review[]
      addresses     Address[]
-     prescriptions Prescription[]
      notifications Notification[]
      auditLogs     AuditLog[]
 

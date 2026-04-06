@@ -13,8 +13,7 @@ model Medicine {
      brand                String?
      dosageForm           String? // Tablet, Syrup, Injection...
      strength             String? // 500mg, 5ml...
-     unit                 String   @default("piece") // piece, strip, bottle...
-     requiresPrescription Boolean  @default(false)
+     unit                 String   @default("piece") 
      isActive             Boolean  @default(true)
      sku                  String?  @unique
 
@@ -27,7 +26,6 @@ model Medicine {
      reviews           Review[]
      orderItems        OrderItem[]
      batches           MedicineBatch[]
-     prescriptionItems PrescriptionItem[]
 
      createdAt DateTime @default(now())
      updatedAt DateTime @updatedAt
