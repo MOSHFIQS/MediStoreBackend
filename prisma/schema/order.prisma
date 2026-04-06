@@ -1,22 +1,47 @@
-enum OrderStatus {
-     PLACED
-     PROCESSING
-     SHIPPED
-     DELIVERED
-     CANCELLED
-}
-
 model Order {
      id         String @id @default(uuid())
      customerId String
      customer   User   @relation("CustomerOrders", fields: [customerId], references: [id])
 
-     status     OrderStatus @default(PLACED)
-     totalPrice Float
-     address    String
+     addressId String?
+     address   Address? @relation(fields: [addressId], references: [id])
 
-     items OrderItem[]
+     // Snapshot address in case Address is deleted later
+     addressSnapshot Json?
+
+     couponId       String?
+     coupon         Coupon? @relation(fields: [couponId], references: [id])
+     couponDiscount Float   @default(0)
+
+     status      OrderStatus @default(PLACED)
+     subtotal    Float
+     shippingFee Float       @default(0)
+     tax         Float       @default(0)
+     totalPrice  Float
+     notes       String?
+
+     items   OrderItem[]
+     payment Payment?
 
      createdAt DateTime @default(now())
      updatedAt DateTime @updatedAt
+
+     @@map("orders")
+}
+
+model OrderItem {
+     id         String   @id @default(uuid())
+     orderId    String
+     order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+     medicineId String
+     medicine   Medicine @relation(fields: [medicineId], references: [id])
+
+     // Snapshot at time of purchase
+     medicineName  String
+     medicineImage String?
+     quantity      Int
+     unitPrice     Float
+     totalPrice    Float
+
+     @@map("order_items")
 }

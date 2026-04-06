@@ -1,7 +1,16 @@
 model Category {
-     id        String     @id @default(uuid())
-     name      String     @unique
-     medicines Medicine[]     
-     createdAt DateTime   @default(now())
-     updatedAt DateTime   @updatedAt
+     id          String     @id @default(uuid())
+     name        String     @unique
+     slug        String     @unique
+     description String?
+     image       String?
+     parentId    String?
+     parent      Category?  @relation("SubCategories", fields: [parentId], references: [id])
+     children    Category[] @relation("SubCategories")
+     medicines   Medicine[]
+
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+
+     @@map("categories")
 }

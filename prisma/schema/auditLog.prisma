@@ -1,0 +1,15 @@
+model AuditLog {
+     id        String  @id @default(uuid())
+     userId    String?
+     user      User?   @relation(fields: [userId], references: [id])
+     action    String // ORDER_CANCELLED, PAYMENT_REFUNDED, USER_BANNED...
+     entity    String // Order, User, Medicine...
+     entityId  String
+     oldValue  Json?
+     newValue  Json?
+     ipAddress String?
+
+     createdAt DateTime @default(now())
+
+     @@map("audit_logs")
+}

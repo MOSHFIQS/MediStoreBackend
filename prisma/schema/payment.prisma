@@ -1,0 +1,58 @@
+model Payment {
+     id      String @id @default(uuid())
+     orderId String @unique
+     order   Order  @relation(fields: [orderId], references: [id])
+
+     method   PaymentMethod @default(SSLCOMMERZ)
+     status   PaymentStatus @default(PENDING)
+     amount   Float
+     currency String        @default("BDT")
+
+     // SSLCommerz specific fields
+     tranId          String? @unique // your generated transaction ID sent to SSLCommerz
+     sessionKey      String? // returned by SSLCommerz on init
+     valId           String? // returned on successful IPN/redirect
+     bankTranId      String? // bank-level transaction ID
+     cardType        String? // VISA, MASTER, bKash, Nagad...
+     cardNo          String? // masked card number
+     storeAmount     Float? // amount after SSLCommerz fee deduction
+     currency_type   String? // currency type returned
+     currency_amount Float?
+     currency_rate   Float?
+     gatewayFee      Float?
+
+     // IPN raw payload (store for audit/reconciliation)
+     ipnPayload Json?
+
+     // Refund
+     refundAmount Float?
+     refundedAt   DateTime?
+     refundRef    String?
+
+     initiatedAt DateTime?
+     paidAt      DateTime?
+     failedAt    DateTime?
+
+     logs PaymentLog[]
+
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+
+     @@map("payments")
+}
+
+model PaymentLog {
+     id        String  @id @default(uuid())
+     paymentId String
+     payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+     event      String // INITIATED, IPN_RECEIVED, SUCCESS, FAILED, REFUND_REQUESTED...
+     status     String
+     rawPayload Json? // raw data from SSLCommerz at this event
+     ipAddress  String?
+     note       String?
+
+     createdAt DateTime @default(now())
+
+     @@map("payment_logs")
+}

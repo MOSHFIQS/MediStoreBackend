@@ -1,29 +1,27 @@
-enum Role {
-     CUSTOMER
-     SELLER
-     ADMIN
-}
-
-enum UserStatus {
-     ACTIVE
-     BANNED
-}
-
 model User {
-     id        String     @id @default(uuid())
-     name      String
-     email     String     @unique
-     password  String
-     image     String?
-     phone     String?
-     role      Role       @default(CUSTOMER)
-     status    UserStatus @default(ACTIVE)
-     createdAt DateTime   @default(now())
-     updatedAt DateTime   @updatedAt
+     id       String     @id @default(uuid())
+     name     String
+     email    String     @unique
+     password String
+     image    String?
+     phone    String?
+     role     Role       @default(CUSTOMER)
+     status   UserStatus @default(ACTIVE)
 
-     medicines Medicine[] @relation("SellerMedicines")
-     orders    Order[]    @relation("CustomerOrders")
-     reviews   Review[]
+     isEmailVerified Boolean   @default(false)
+     emailVerifiedAt DateTime?
+     lastLoginAt     DateTime?
 
-     @@map("user")
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+
+     medicines     Medicine[]     @relation("SellerMedicines")
+     orders        Order[]        @relation("CustomerOrders")
+     reviews       Review[]
+     addresses     Address[]
+     prescriptions Prescription[]
+     notifications Notification[]
+     auditLogs     AuditLog[]
+
+     @@map("users")
 }
