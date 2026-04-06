@@ -57,29 +57,17 @@ const createOrder = async (customerId: string, payload: CreateOrderPayload) => {
                where: {
                     code: couponCode,
                     isActive: true,
-                    AND: [
-                         {
-                              OR: [
-                                   { expiresAt: null },
-                                   { expiresAt: { gt: new Date() } }
-                              ]
-                         },
-                         {
-                              OR: [
-                                   { usageLimit: null },
-                                   {
-                                        usageLimit: {
-                                             gt: prisma.coupon.fields.usedCount
-                                        }
-                                   }
-                              ]
-                         }
+                    OR: [
+                         { expiresAt: null },
+                         { expiresAt: { gt: new Date() } }
                     ]
                }
           })
           if (!coupon) throw new Error("Invalid or expired coupon")
-          if (coupon.minOrderAmount && subtotal < coupon.minOrderAmount)
-               throw new Error(`Minimum order amount is ${coupon.minOrderAmount}`)
+
+          if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+               throw new Error("Coupon usage limit reached")
+          }
 
           couponId = coupon.id
           couponDiscount = coupon.discountType === "PERCENTAGE"
