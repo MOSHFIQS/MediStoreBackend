@@ -6,6 +6,11 @@ import { categoryRouter } from "../modules/category/category.route";
 import { adminRouter } from "../modules/admin/admin.route";
 import { reviewRouter } from "../modules/review/review.route";
 import { userRouter } from './../modules/user/user.route';
+import { addressRouter } from './../modules/address/address.route';
+import { couponRouter } from './../modules/coupon/coupon.route';
+import { notificationRouter } from './../modules/notification/notification.route';
+import { paymentRouter } from './../modules/payment/payment.route';
+import { prescriptionRouter } from './../modules/prescription/prescription.route';
 
 
 const router = Router();
@@ -16,15 +21,15 @@ const moduleRoutes = [
           route: authRouter,
      },
      {
-          path: '/medicines',
+          path: '/medicine',
           route: medicineRouter,
      },
      {
-          path: '/orders',
+          path: '/order',
           route: orderRouter,
      },
      {
-          path: '/categories',
+          path: '/category',
           route: categoryRouter,
      },
      {
@@ -32,12 +37,32 @@ const moduleRoutes = [
           route: adminRouter,
      },
      {
+          path: '/user',
+          route: userRouter,
+     },
+     {
           path: '/review',
           route: reviewRouter,
      },
      {
-          path: '/user',
-          route: userRouter,
+          path: '/address',
+          route: addressRouter,
+     },
+     {
+          path: '/coupon',
+          route: couponRouter,
+     },
+     {
+          path: '/notification',
+          route: notificationRouter,
+     },
+     {
+          path: '/payment',
+          route: paymentRouter,
+     },
+     {
+          path: '/prescription',
+          route: prescriptionRouter,
      },
 
 ];
