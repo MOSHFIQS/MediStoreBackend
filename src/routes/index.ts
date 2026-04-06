@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { authRouter } from './../modules/auth/auth.route';
-import { medicineRouter } from "../modules/medicines/medicine.route";
-import { orderRouter } from "../modules/orders/order.route";
-import { categoryRouter } from "../modules/categories/category.route";
+import { medicineRouter } from "../modules/medicine/medicine.route";
+import { orderRouter } from "../modules/order/order.route";
+import { categoryRouter } from "../modules/category/category.route";
 import { adminRouter } from "../modules/admin/admin.route";
-import { reviewRouter } from "../modules/reviews/review.route";
+import { reviewRouter } from "../modules/review/review.route";
 import { userRouter } from './../modules/user/user.route';
 
 
