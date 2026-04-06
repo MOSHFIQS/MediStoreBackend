@@ -1,5 +1,6 @@
 import { UserStatus } from "../../../generated/prisma/enums"
 import { prisma } from "../../lib/prisma"
+import { auditService } from './../audit/audit.service';
 
 
 
@@ -18,13 +19,28 @@ const getAllUsers = async () => {
      })
 }
 
-const updateUserStatus = async (userId: string, status: UserStatus) => {
-     return prisma.user.update({
-          where: { id: userId },
-          data: { status }
-     })
-}
+const updateUserStatus = async (userId: string, newStatus: UserStatus, adminId: string, ipAddress?: string) => {
+     const oldUser = await prisma.user.findUnique({ where: { id: userId } })
 
+     const updated = await prisma.user.update({
+          where: { id: userId },
+          data: { status: newStatus }
+     })
+
+     // Write audit log after the change
+     await auditService.log({
+          userId: adminId,
+          action: `USER_${newStatus}`,
+          entity: "User",
+          entityId: userId,
+          oldValue: { status: oldUser?.status ?? null },
+          newValue: { status: newStatus },
+
+          ...(ipAddress !== undefined && { ipAddress })
+     })
+
+     return updated
+}
 
 const getStatistics = async () => {
      const totalUsers = await prisma.user.count();

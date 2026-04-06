@@ -1,6 +1,7 @@
+import { Prisma } from "../../../generated/prisma/client"
 import { prisma } from "../../lib/prisma"
 
-// Call this function from anywhere in your app
+
 const log = async (payload: {
      userId?: string
      action: string
@@ -10,7 +11,17 @@ const log = async (payload: {
      newValue?: object | null
      ipAddress?: string
 }) => {
-     return prisma.auditLog.create({ data: payload })
+     return prisma.auditLog.create({
+          data: {
+               action: payload.action,
+               entity: payload.entity,
+               entityId: payload.entityId,
+               userId: payload.userId ?? null,
+               oldValue: payload.oldValue ?? null,
+               newValue: payload.newValue ?? null,
+               ipAddress: payload.ipAddress ?? null
+          } as Prisma.AuditLogUncheckedCreateInput
+     })
 }
 
 const getAuditLogs = async (query: {
