@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express"
 import jwt from "jsonwebtoken"
 import status from "http-status"
 import { Role, UserStatus } from "../../generated/prisma/enums";
+import { envVars } from "../config/env";
 
 
 declare global {
@@ -35,7 +36,7 @@ export const auth = (...allowedRoles: Role[]) => {
           }
 
           try {
-               const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+               const decoded = jwt.verify(token, envVars.JWT_SECRET!) as {
                     id: string
                     role: Role
                     email: string

@@ -25,10 +25,31 @@ const getMedicineReviews = async (medicineId: string) => {
      })
 }
 
-const deleteReview = async (id: string, userId: string) => {
-     const review = await prisma.review.findFirst({ where: { id, userId } })
+const deleteReview = async (id: string, userId: string, role: string) => {
+     const review = await prisma.review.findUnique({ where: { id } })
      if (!review) throw new Error("Review not found")
+
+     // Owner or admin can delete
+     if (review.userId !== userId && role !== "ADMIN") {
+          throw new Error("Unauthorized")
+     }
+
      return prisma.review.delete({ where: { id } })
 }
 
-export const reviewService = { createReview, getMedicineReviews, deleteReview }
+const getAllReviews = async () => {
+     return prisma.review.findMany({
+          orderBy: { createdAt: "desc" },
+          include: {
+               user: { select: { id: true, name: true, image: true } },
+               medicine: { select: { id: true, name: true, image: true } }
+          }
+     })
+}
+
+export const reviewService = {
+     createReview,
+     getAllReviews,   // ← add
+     getMedicineReviews,
+     deleteReview
+}

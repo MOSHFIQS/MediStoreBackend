@@ -4,14 +4,14 @@ import cookieParser from "cookie-parser";
 import errorHandler from "./middlewares/globalErrorHandler";
 import { notFound } from "./middlewares/notFound";
 import router from "./routes";
+import { envVars } from './config/env';
 
 const app: Application = express();
 
 app.use(cors({
      origin: function (origin, callback) {
           const allowedOrigins = [
-               process.env.LOCAL_CLIENT_URL,
-               process.env.PROD_CLIENT_URL,
+               envVars.FRONTEND_URL
           ];
 
           if (!origin) return callback(null, true);
@@ -32,7 +32,7 @@ app.use(express.json())
 
 app.use("/api", router)
 
-app.get("/", (req : Request, res : Response) => {
+app.get("/", (req: Request, res: Response) => {
      res.send("Hello, World!");
 })
 

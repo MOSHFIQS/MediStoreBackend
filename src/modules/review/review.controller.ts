@@ -19,9 +19,22 @@ const getMedicineReviews = async (req: Request, res: Response, next: NextFunctio
 
 const deleteReview = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          await reviewService.deleteReview(req.params.id as string, (req as any).user.id)
-          sendResponse(res, { statusCode: status.OK, success: true, message: "Review deleted", data: null })
+          const { id: userId, role } = (req as any).user
+          const result = await reviewService.deleteReview(req.params.id as string, userId, role)
+          sendResponse(res, { statusCode: status.OK, success: true, message: "Review deleted", data: result })
      } catch (e) { next(e) }
 }
 
-export const reviewController = { createReview, getMedicineReviews, deleteReview }
+const getAllReviews = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+          const result = await reviewService.getAllReviews()
+          sendResponse(res, { statusCode: status.OK, success: true, message: "Reviews fetched", data: result })
+     } catch (e) { next(e) }
+}
+
+export const reviewController = {
+     createReview,
+     getAllReviews,   // ← add
+     getMedicineReviews,
+     deleteReview
+}

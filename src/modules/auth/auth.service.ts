@@ -1,8 +1,9 @@
 import { prisma } from "../../lib/prisma"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
+import { envVars } from "../../config/env"
 
-const JWT_SECRET = process.env.JWT_SECRET || "supersecret"
+const JWT_SECRET = envVars.JWT_SECRET || "supersecret"
 
 interface RegisterData {
      name: string

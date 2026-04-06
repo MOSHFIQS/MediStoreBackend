@@ -101,19 +101,7 @@ JWT-based authentication.
 Create a `.env` file:
 
 ```env
-DATABASE_URL="postgresql://neondb_owner:npg_4QmJfh/medi-store?sslmode=require&channel_binding=require" // your db url
-JWT_SECRET=yourjwtsecret
-PORT=5000
-LOCAL_CLIENT_URL=http://localhost:3000
-PROD_CLIENT_URL=https://medi-store.vercel.app
-NODE_ENV=development or production
 
-
-
-
-##  Admin Creadiatials
-email : admin@gmail.com
-password : 12345678
 
 
 
