@@ -51,33 +51,37 @@ const signUpUser = async (payload: RegisterData) => {
 
 
 
-
-
 const signInUser = async (payload: LoginData) => {
-     const { email, password } = payload
+     const { email, password } = payload;
 
-     const user = await prisma.user.findUnique({ where: { email } })
-     if (!user) throw new Error("Invalid credentials")
+     const user = await prisma.user.findUnique({ where: { email } });
+     if (!user) throw new Error("Invalid credentials");
 
-     const isMatch = await bcrypt.compare(password, user.password)
-     if (!isMatch) throw new Error("Invalid credentials")
+     // block banned / suspended users
+     if (user.status === "BANNED") {
+          throw new Error("Your account has been banned");
+     }
+     if (user.status === "SUSPENDED") {
+          throw new Error("Your account is suspended. Contact support");
+     }
+
+     const isMatch = await bcrypt.compare(password, user.password);
+     if (!isMatch) throw new Error("Invalid credentials");
+
+     // Update last login time
+     const updatedUser = await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLoginAt: new Date() },
+     });
 
      const token = jwt.sign(
-          { id: user.id, role: user.role, email: user.email, status: user.status },
+          { id: updatedUser.id, role: updatedUser.role, email: updatedUser.email, status: updatedUser.status },
           JWT_SECRET,
           { expiresIn: "7d" }
-     )
+     );
 
-     const { password: _, ...safeUser } = user
+     const { password: _, ...safeUser } = updatedUser;
 
-     return { user: safeUser, token }
-}
-
-
-
-
-
-
-
-
+     return { user: safeUser, token };
+};
 export const authService = { signUpUser, signInUser }

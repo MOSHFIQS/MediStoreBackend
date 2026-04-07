@@ -20,6 +20,7 @@ router.get("/order/:orderId", auth(Role.CUSTOMER), paymentController.getPaymentB
 
 router.get("/my", auth(Role.CUSTOMER), paymentController.getMyPayments)
 router.get("/admin", auth(Role.ADMIN), paymentController.getAllPayments)
+router.patch("/admin/:id/refund", auth(Role.ADMIN), paymentController.refundPayment)
 router.get("/seller", auth(Role.SELLER), paymentController.getSellerPayments)
 
 
