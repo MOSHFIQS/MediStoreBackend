@@ -6,7 +6,7 @@ import SSLCommerzPayment from "sslcommerz-lts"
 const STORE_ID = envVars.SSLCOMMERZ.SSL_STORE_ID
 const STORE_PASS = envVars.SSLCOMMERZ.SSL_STORE_PASS
 const IS_LIVE = envVars.SSLCOMMERZ.SSL_IS_LIVE === "true"
-const BACKEND_URL = process.env.BACKEND_URL! || "http://localhost:5000"
+const BACKEND_URL = envVars.BACKEND_URL! || "http://localhost:5000"
 const FRONTEND_URL = process.env.FRONTEND_URL! || "http://localhost:3000"
 
 const initiatePayment = async (orderId: string, customerId: string) => {

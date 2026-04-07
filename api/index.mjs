@@ -146,6 +146,7 @@ var loadEnvVariables = () => {
     "DATABASE_URL",
     "JWT_SECRET",
     "FRONTEND_URL",
+    "BACKEND_URL",
     "CLOUDINARY_CLOUD_NAME",
     "CLOUDINARY_API_KEY",
     "CLOUDINARY_API_SECRET",
@@ -167,6 +168,7 @@ var loadEnvVariables = () => {
     DATABASE_URL: process.env.DATABASE_URL,
     JWT_SECRET: process.env.JWT_SECRET,
     FRONTEND_URL: process.env.FRONTEND_URL,
+    BACKEND_URL: process.env.BACKEND_URL,
     CLOUDINARY: {
       CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
       CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
@@ -2450,7 +2452,7 @@ import SSLCommerzPayment from "sslcommerz-lts";
 var STORE_ID = envVars.SSLCOMMERZ.SSL_STORE_ID;
 var STORE_PASS = envVars.SSLCOMMERZ.SSL_STORE_PASS;
 var IS_LIVE = envVars.SSLCOMMERZ.SSL_IS_LIVE === "true";
-var BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
+var BACKEND_URL = envVars.BACKEND_URL || "http://localhost:5000";
 var FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 var initiatePayment = async (orderId, customerId) => {
   const order = await prisma.order.findFirst({

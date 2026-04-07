@@ -10,6 +10,7 @@ interface EnvConfig {
      DATABASE_URL: string;
      JWT_SECRET: string;
      FRONTEND_URL: string;
+     BACKEND_URL:string;
      CLOUDINARY: {
           CLOUDINARY_CLOUD_NAME: string;
           CLOUDINARY_API_KEY: string;
@@ -29,6 +30,7 @@ const loadEnvVariables = (): EnvConfig => {
           "DATABASE_URL",
           "JWT_SECRET",
           "FRONTEND_URL",
+          "BACKEND_URL",
           'CLOUDINARY_CLOUD_NAME',
           'CLOUDINARY_API_KEY',
           'CLOUDINARY_API_SECRET',
@@ -53,6 +55,7 @@ const loadEnvVariables = (): EnvConfig => {
           DATABASE_URL: process.env.DATABASE_URL as string,
           JWT_SECRET: process.env.JWT_SECRET as string,
           FRONTEND_URL: process.env.FRONTEND_URL as string,
+          BACKEND_URL: process.env.BACKEND_URL as string,
           CLOUDINARY: {
                CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME as string,
                CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY as string,
