@@ -6,7 +6,7 @@ import SSLCommerzPayment from "sslcommerz-lts"
 const STORE_ID = envVars.SSLCOMMERZ.SSL_STORE_ID
 const STORE_PASS = envVars.SSLCOMMERZ.SSL_STORE_PASS
 const IS_LIVE = envVars.SSLCOMMERZ.SSL_IS_LIVE === "true"
-const BACKEND_URL = process.env.BACKEND_URL! || "http://localhost:5000" 
+const BACKEND_URL = process.env.BACKEND_URL! || "http://localhost:5000"
 const FRONTEND_URL = process.env.FRONTEND_URL! || "http://localhost:3000"
 
 const initiatePayment = async (orderId: string, customerId: string) => {
@@ -183,7 +183,171 @@ const getPaymentByOrder = async (orderId: string, customerId: string) => {
      })
 }
 
+
+const getMyPayments = async (customerId: string) => {
+     return prisma.payment.findMany({
+          where: { order: { customerId } },
+          include: {
+               order: {
+                    select: {
+                         id: true,
+                         status: true,
+                         totalPrice: true,
+                         subtotal: true,
+                         shippingFee: true,
+                         couponDiscount: true,
+                         createdAt: true,
+                         items: {
+                              select: {
+                                   medicineName: true,
+                                   quantity: true,
+                                   unitPrice: true,
+                                   totalPrice: true,
+                              }
+                         }
+                    }
+               },
+               logs: {
+                    orderBy: { createdAt: "desc" },
+                    take: 1 // latest log only
+               }
+          },
+          orderBy: { createdAt: "desc" }
+     })
+}
+
+const getSellerPayments = async (sellerId: string) => {
+     return prisma.payment.findMany({
+          where: {
+               order: {
+                    items: { some: { medicine: { sellerId } } }
+               }
+          },
+          include: {
+               order: {
+                    select: {
+                         id: true,
+                         status: true,
+                         totalPrice: true,
+                         subtotal: true,
+                         shippingFee: true,
+                         createdAt: true,
+                         customer: {
+                              select: { id: true, name: true, phone: true, email: true }
+                         },
+                         items: {
+                              where: { medicine: { sellerId } },
+                              select: {
+                                   medicineName: true,
+                                   quantity: true,
+                                   unitPrice: true,
+                                   totalPrice: true,
+                              }
+                         }
+                    }
+               }
+          },
+          orderBy: { createdAt: "desc" }
+     })
+}
+
+const getAllPayments = async () => {
+     return prisma.payment.findMany({
+          include: {
+               order: {
+                    select: {
+                         id: true,
+                         status: true,
+                         totalPrice: true,
+                         subtotal: true,
+                         shippingFee: true,
+                         createdAt: true,
+                         customer: {
+                              select: { id: true, name: true, email: true, phone: true, role: true }
+                         },
+                         items: {
+                              select: {
+                                   medicineName: true,
+                                   quantity: true,
+                                   unitPrice: true,
+                                   totalPrice: true,
+                              }
+                         }
+                    }
+               },
+               logs: { orderBy: { createdAt: "desc" } }
+          },
+          orderBy: { createdAt: "desc" }
+     })
+}
+
+const refundPayment = async (paymentId: string, adminId: string, ip?: string) => {
+     const payment = await prisma.payment.findUnique({
+          where: { id: paymentId },
+          include: { order: true }
+     })
+
+     if (!payment) throw new Error("Payment not found")
+     if (payment.status !== "SUCCESS") throw new Error("Only successful payments can be refunded")
+     if (payment.refundedAt) throw new Error("Payment already refunded")
+
+     return prisma.$transaction(async (tx) => {
+          const updated = await tx.payment.update({
+               where: { id: paymentId },
+               data: {
+                    status: "REFUNDED",
+                    refundAmount: payment.amount,
+                    refundedAt: new Date(),
+               }
+          })
+
+          await tx.order.update({
+               where: { id: payment.orderId },
+               data: { status: "REFUNDED" }
+          })
+
+          await tx.paymentLog.create({
+               data: {
+                    paymentId,
+                    event: "REFUND_ISSUED",
+                    status: "REFUNDED",
+                    note: `Refund issued by admin`,
+                    ipAddress: ip
+               }
+          })
+
+          await tx.auditLog.create({
+               data: {
+                    userId: adminId,
+                    action: "PAYMENT_REFUNDED",
+                    entity: "Payment",
+                    entityId: paymentId,
+                    oldValue: { status: "SUCCESS" },
+                    newValue: { status: "REFUNDED", refundAmount: payment.amount },
+                    ipAddress: ip
+               }
+          })
+
+          await tx.notification.create({
+               data: {
+                    userId: payment.order.customerId,
+                    type: "PAYMENT_UPDATE",
+                    title: "Refund Issued",
+                    message: `Your payment of ৳${payment.amount} has been refunded.`,
+                    meta: { paymentId, orderId: payment.orderId }
+               }
+          })
+
+          return updated
+     })
+}
+
+
 export const paymentService = {
      initiatePayment, handleSuccess, handleFail,
-     handleCancel, handleIPN, getPaymentByOrder
+     handleCancel, handleIPN, getPaymentByOrder,
+     getMyPayments,
+     getSellerPayments,
+     getAllPayments,
+     refundPayment,
 }

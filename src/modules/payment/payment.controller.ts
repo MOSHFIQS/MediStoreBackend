@@ -50,7 +50,45 @@ const getPaymentByOrder = async (req: Request, res: Response, next: NextFunction
      } catch (e) { next(e) }
 }
 
+
+const getMyPayments = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+          const result = await paymentService.getMyPayments((req as any).user.id)
+          sendResponse(res, { statusCode: status.OK, success: true, message: "My payments fetched", data: result })
+     } catch (e) { next(e) }
+}
+
+const getSellerPayments = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+          const result = await paymentService.getSellerPayments((req as any).user.id)
+          sendResponse(res, { statusCode: status.OK, success: true, message: "Seller payments fetched", data: result })
+     } catch (e) { next(e) }
+}
+
+const getAllPayments = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+          const result = await paymentService.getAllPayments()
+          sendResponse(res, { statusCode: status.OK, success: true, message: "All payments fetched", data: result })
+     } catch (e) { next(e) }
+}
+
+const refundPayment = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+          const ip = req.ip || req.headers["x-forwarded-for"] as string
+          const result = await paymentService.refundPayment(
+               req.params.id as string,
+               (req as any).user.id,
+               ip
+          )
+          sendResponse(res, { statusCode: status.OK, success: true, message: "Payment refunded", data: result })
+     } catch (e) { next(e) }
+}
+
 export const paymentController = {
      initiatePayment, paymentSuccess, paymentFail,
-     paymentCancel, paymentIPN, getPaymentByOrder
+     paymentCancel, paymentIPN, getPaymentByOrder,
+     getMyPayments,
+     getSellerPayments,
+     getAllPayments,
+     refundPayment,
 }

@@ -17,4 +17,12 @@ router.post("/ipn", paymentController.paymentIPN)  // server-to-server
 // View payment status
 router.get("/order/:orderId", auth(Role.CUSTOMER), paymentController.getPaymentByOrder)
 
+
+router.get("/my", auth(Role.CUSTOMER), paymentController.getMyPayments)
+router.get("/admin", auth(Role.ADMIN), paymentController.getAllPayments)
+router.get("/seller", auth(Role.SELLER), paymentController.getSellerPayments)
+
+
+
+
 export const paymentRouter = router
