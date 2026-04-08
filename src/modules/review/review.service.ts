@@ -49,7 +49,7 @@ const getAllReviews = async () => {
 
 export const reviewService = {
      createReview,
-     getAllReviews,   // ← add
+     getAllReviews,   
      getMedicineReviews,
      deleteReview
 }
