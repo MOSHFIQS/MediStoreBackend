@@ -1,24 +1,39 @@
 import multer from "multer";
-import AppError from "../errorHelpers/AppError";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { cloudinaryUpload } from "./cloudinary.config";
 
-const allowedExtensions = ["jpg", "jpeg", "png", "webp", "gif","pdf"];
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinaryUpload,
+    params: async (req, file) => {
+        const originalName = file.originalname;
+        const extension = originalName.split(".").pop()?.toLocaleLowerCase();
 
-const storage = multer.memoryStorage();
+        const fileNameWithoutExtension = originalName
+            .split(".")
+            .slice(0, -1)
+            .join(".")
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            // eslint-disable-next-line no-useless-escape
+            .replace(/[^a-z0-9\-]/g, "");
 
-const fileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
-    const extension = file.originalname.split(".").pop()?.toLowerCase();
+        const uniqueName =
+            Math.random().toString(36).substring(2)+
+            "-"+
+            Date.now()+
+            "-"+
+            fileNameWithoutExtension;
 
-    if (!extension || !allowedExtensions.includes(extension)) {
-        return cb(new AppError(400, "Only specify files are allowed"));
+        const folder = extension === "pdf" ? "pdfs" : "images";
+
+
+        return {
+            folder : `medi-store/${folder}`,
+            public_id: uniqueName,
+            resource_type : "auto"
+        }
     }
 
-    cb(null, true);
-};
+})
 
-export const multerUpload = multer({
-    storage,
-    fileFilter,
-    limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB
-    },
-});
+export const multerUpload = multer({storage})

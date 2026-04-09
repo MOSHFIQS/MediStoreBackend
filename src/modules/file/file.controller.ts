@@ -6,12 +6,7 @@ import sendResponse from "../../utils/sendResponse";
 
 const uploadImage = async (req: Request, res: Response) => {
      const files = req.files as Express.Multer.File[];
-
-     if (!files || files.length === 0) {
-          throw new AppError(status.BAD_REQUEST, "No file uploaded");
-     }
-
-     if (files.length > 10) {
+     if (files?.length > 10) {
           throw new AppError(status.BAD_REQUEST, "Maximum 10 images are allowed");
      }
 
