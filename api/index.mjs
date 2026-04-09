@@ -310,6 +310,352 @@ import { Router as Router2 } from "express";
 // src/modules/medicine/medicine.controller.ts
 import status3 from "http-status";
 
+// src/utils/QueryBuilder.ts
+var QueryBuilder = class {
+  constructor(model, queryParams, config2 = {}) {
+    this.model = model;
+    this.queryParams = queryParams;
+    this.config = config2;
+    this.query = {
+      where: {},
+      include: {},
+      orderBy: {},
+      skip: 0,
+      take: 10
+    };
+    this.countQuery = {
+      where: {}
+    };
+  }
+  model;
+  queryParams;
+  config;
+  query;
+  countQuery;
+  page = 1;
+  limit = 10;
+  skip = 0;
+  sortBy = "createdAt";
+  sortOrder = "desc";
+  selectFields;
+  search() {
+    const { searchTerm } = this.queryParams;
+    const { searchableFields } = this.config;
+    if (searchTerm && searchableFields && searchableFields.length > 0) {
+      const searchConditions = searchableFields.map(
+        (field) => {
+          if (field.includes(".")) {
+            const parts = field.split(".");
+            if (parts.length === 2) {
+              const [relation, nestedField] = parts;
+              const stringFilter2 = {
+                contains: searchTerm,
+                mode: "insensitive"
+              };
+              return {
+                [relation]: {
+                  [nestedField]: stringFilter2
+                }
+              };
+            } else if (parts.length === 3) {
+              const [relation, nestedRelation, nestedField] = parts;
+              const stringFilter2 = {
+                contains: searchTerm,
+                mode: "insensitive"
+              };
+              return {
+                [relation]: {
+                  some: {
+                    [nestedRelation]: {
+                      [nestedField]: stringFilter2
+                    }
+                  }
+                }
+              };
+            }
+          }
+          const stringFilter = {
+            contains: searchTerm,
+            mode: "insensitive"
+          };
+          return {
+            [field]: stringFilter
+          };
+        }
+      );
+      const whereConditions = this.query.where;
+      whereConditions.OR = searchConditions;
+      const countWhereConditions = this.countQuery.where;
+      countWhereConditions.OR = searchConditions;
+    }
+    return this;
+  }
+  // /doctors?searchTerm=john&page=1&sortBy=name&specialty=cardiology&appointmentFee[lt]=100 => {}
+  // { specialty: 'cardiology', appointmentFee: { lt: '100' } }
+  filter() {
+    const { filterableFields } = this.config;
+    const excludedField = ["searchTerm", "page", "limit", "sortBy", "sortOrder", "fields", "include"];
+    const filterParams = {};
+    Object.keys(this.queryParams).forEach((key) => {
+      if (!excludedField.includes(key)) {
+        filterParams[key] = this.queryParams[key];
+      }
+    });
+    const queryWhere = this.query.where;
+    const countQueryWhere = this.countQuery.where;
+    Object.keys(filterParams).forEach((key) => {
+      const value = filterParams[key];
+      if (value === void 0 || value === "") {
+        return;
+      }
+      const isAllowedField = !filterableFields || filterableFields.length === 0 || filterableFields.includes(key);
+      if (key.includes(".")) {
+        const parts = key.split(".");
+        if (filterableFields && !filterableFields.includes(key)) {
+          return;
+        }
+        if (parts.length === 2) {
+          const [relation, nestedField] = parts;
+          if (!queryWhere[relation]) {
+            queryWhere[relation] = {};
+            countQueryWhere[relation] = {};
+          }
+          const queryRelation = queryWhere[relation];
+          const countRelation = countQueryWhere[relation];
+          queryRelation[nestedField] = this.parseFilterValue(value);
+          countRelation[nestedField] = this.parseFilterValue(value);
+          return;
+        } else if (parts.length === 3) {
+          const [relation, nestedRelation, nestedField] = parts;
+          if (!queryWhere[relation]) {
+            queryWhere[relation] = {
+              some: {}
+            };
+            countQueryWhere[relation] = {
+              some: {}
+            };
+          }
+          const queryRelation = queryWhere[relation];
+          const countRelation = countQueryWhere[relation];
+          if (!queryRelation.some) {
+            queryRelation.some = {};
+          }
+          if (!countRelation.some) {
+            countRelation.some = {};
+          }
+          const querySome = queryRelation.some;
+          const countSome = countRelation.some;
+          if (!querySome[nestedRelation]) {
+            querySome[nestedRelation] = {};
+          }
+          if (!countSome[nestedRelation]) {
+            countSome[nestedRelation] = {};
+          }
+          const queryNestedRelation = querySome[nestedRelation];
+          const countNestedRelation = countSome[nestedRelation];
+          queryNestedRelation[nestedField] = this.parseFilterValue(value);
+          countNestedRelation[nestedField] = this.parseFilterValue(value);
+          return;
+        }
+      }
+      if (!isAllowedField) {
+        return;
+      }
+      if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+        queryWhere[key] = this.parseRangeFilter(value);
+        countQueryWhere[key] = this.parseRangeFilter(value);
+        return;
+      }
+      queryWhere[key] = this.parseFilterValue(value);
+      countQueryWhere[key] = this.parseFilterValue(value);
+    });
+    return this;
+  }
+  paginate() {
+    const page = Number(this.queryParams.page) || 1;
+    const limit = Number(this.queryParams.limit) || 10;
+    this.page = page;
+    this.limit = limit;
+    this.skip = (page - 1) * limit;
+    this.query.skip = this.skip;
+    this.query.take = this.limit;
+    return this;
+  }
+  sort() {
+    const sortBy = this.queryParams.sortBy || "createdAt";
+    const sortOrder = this.queryParams.sortOrder === "asc" ? "asc" : "desc";
+    this.sortBy = sortBy;
+    this.sortOrder = sortOrder;
+    if (sortBy.includes(".")) {
+      const parts = sortBy.split(".");
+      if (parts.length === 2) {
+        const [relation, nestedField] = parts;
+        this.query.orderBy = {
+          [relation]: {
+            [nestedField]: sortOrder
+          }
+        };
+      } else if (parts.length === 3) {
+        const [relation, nestedRelation, nestedField] = parts;
+        this.query.orderBy = {
+          [relation]: {
+            [nestedRelation]: {
+              [nestedField]: sortOrder
+            }
+          }
+        };
+      } else {
+        this.query.orderBy = {
+          [sortBy]: sortOrder
+        };
+      }
+    } else {
+      this.query.orderBy = {
+        [sortBy]: sortOrder
+      };
+    }
+    return this;
+  }
+  fields() {
+    const fieldsParam = this.queryParams.fields;
+    if (fieldsParam && typeof fieldsParam === "string") {
+      const fieldsArray = fieldsParam?.split(",").map((field) => field.trim());
+      this.selectFields = {};
+      fieldsArray?.forEach((field) => {
+        if (this.selectFields) {
+          this.selectFields[field] = true;
+        }
+      });
+      this.query.select = this.selectFields;
+      delete this.query.include;
+    }
+    return this;
+  }
+  include(relation) {
+    if (this.selectFields) {
+      return this;
+    }
+    this.query.include = { ...this.query.include, ...relation };
+    return this;
+  }
+  dynamicInclude(includeConfig, defaultInclude) {
+    if (this.selectFields) {
+      return this;
+    }
+    const result = {};
+    defaultInclude?.forEach((field) => {
+      if (includeConfig[field]) {
+        result[field] = includeConfig[field];
+      }
+    });
+    const includeParam = this.queryParams.include;
+    if (includeParam && typeof includeParam === "string") {
+      const requestedRelations = includeParam.split(",").map((relation) => relation.trim());
+      requestedRelations.forEach((relation) => {
+        if (includeConfig[relation]) {
+          result[relation] = includeConfig[relation];
+        }
+      });
+    }
+    this.query.include = { ...this.query.include, ...result };
+    return this;
+  }
+  selectFixed(select) {
+    this.selectFields = select;
+    this.query.select = select;
+    delete this.query.include;
+    return this;
+  }
+  where(condition) {
+    this.query.where = this.deepMerge(this.query.where, condition);
+    this.countQuery.where = this.deepMerge(this.countQuery.where, condition);
+    return this;
+  }
+  async execute() {
+    const [total, data] = await Promise.all([
+      this.model.count(this.countQuery),
+      this.model.findMany(this.query)
+    ]);
+    const totalPages = Math.ceil(total / this.limit);
+    return {
+      data,
+      meta: {
+        page: this.page,
+        limit: this.limit,
+        total,
+        totalPages
+      }
+    };
+  }
+  async count() {
+    return await this.model.count(this.countQuery);
+  }
+  getQuery() {
+    return this.query;
+  }
+  deepMerge(target, source) {
+    const result = { ...target };
+    for (const key in source) {
+      if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
+        if (result[key] && typeof result[key] === "object" && !Array.isArray(result[key])) {
+          result[key] = this.deepMerge(result[key], source[key]);
+        } else {
+          result[key] = source[key];
+        }
+      } else {
+        result[key] = source[key];
+      }
+    }
+    return result;
+  }
+  parseFilterValue(value) {
+    if (value === "true") {
+      return true;
+    }
+    if (value === "false") {
+      return false;
+    }
+    if (typeof value === "string" && !isNaN(Number(value)) && value != "") {
+      return Number(value);
+    }
+    if (Array.isArray(value)) {
+      return { in: value.map((item) => this.parseFilterValue(item)) };
+    }
+    return value;
+  }
+  parseRangeFilter(value) {
+    const rangeQuery = {};
+    Object.keys(value).forEach((operator) => {
+      const operatorValue = value[operator];
+      const parsedValue = typeof operatorValue === "string" && !isNaN(Number(operatorValue)) ? Number(operatorValue) : operatorValue;
+      switch (operator) {
+        case "lt":
+        case "lte":
+        case "gt":
+        case "gte":
+        case "equals":
+        case "not":
+        case "contains":
+        case "startsWith":
+        case "endsWith":
+          rangeQuery[operator] = parsedValue;
+          break;
+        case "in":
+        case "notIn":
+          if (Array.isArray(operatorValue)) {
+            rangeQuery[operator] = operatorValue;
+          } else {
+            rangeQuery[operator] = [parsedValue];
+          }
+          break;
+        default:
+          break;
+      }
+    });
+    return Object.keys(rangeQuery).length > 0 ? rangeQuery : value;
+  }
+};
+
 // src/modules/medicine/medicine.service.ts
 var ACTIVE_ORDER_STATUSES = [
   OrderStatus.PLACED,
@@ -362,42 +708,29 @@ var deleteMedicine = async (id, sellerId) => {
     }
   });
 };
-var getSellerMedicines = async (sellerId) => {
-  return prisma.medicine.findMany({
-    where: { sellerId },
-    include: { category: true },
-    orderBy: { createdAt: "desc" }
+var getSellerMedicines = async (sellerId, query = {}) => {
+  const qb = new QueryBuilder(prisma.medicine, query, {
+    searchableFields: ["name", "genericName", "manufacturer"],
+    // search by medicine name
+    filterableFields: ["categoryId", "price", "stock"]
+    // filters
   });
+  return qb.where({ sellerId }).include({ category: true }).sort().paginate().execute();
 };
-var getAllMedicines = async (query) => {
-  const page = parseInt(query.page || "1");
-  const limit = parseInt(query.limit || "12");
-  const skip = (page - 1) * limit;
-  const where = { isActive: true };
-  if (query.search) {
-    where.OR = [
-      { name: { contains: query.search, mode: "insensitive" } },
-      { genericName: { contains: query.search, mode: "insensitive" } },
-      { manufacturer: { contains: query.search, mode: "insensitive" } }
-    ];
-  }
-  if (query.categoryId) where.categoryId = query.categoryId;
-  if (query.minPrice || query.maxPrice) {
-    where.price = {};
-    if (query.minPrice) where.price.gte = parseFloat(query.minPrice);
-    if (query.maxPrice) where.price.lte = parseFloat(query.maxPrice);
-  }
-  const [data, total] = await Promise.all([
-    prisma.medicine.findMany({
-      where,
-      include: { category: true, seller: { select: { id: true, name: true } } },
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" }
-    }),
-    prisma.medicine.count({ where })
-  ]);
-  return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+var getAllMedicines = async (query = {}) => {
+  const qb = new QueryBuilder(prisma.medicine, query, {
+    searchableFields: ["name", "genericName", "manufacturer"],
+    filterableFields: ["categoryId"]
+  });
+  const result = await qb.search().filter().where({
+    isActive: true
+  }).include({
+    category: true,
+    seller: {
+      select: { id: true, name: true }
+    }
+  }).sort().paginate().execute();
+  return result;
 };
 var getMedicineById = async (id) => {
   const medicine = await prisma.medicine.findFirst({
@@ -452,7 +785,8 @@ var deleteMedicine2 = async (req, res, next) => {
 };
 var getSellerMedicines2 = async (req, res, next) => {
   try {
-    const result = await medicineService.getSellerMedicines(req.user.id);
+    const query = req.query;
+    const result = await medicineService.getSellerMedicines(req.user.id, query);
     sendResponse_default(res, { statusCode: status3.OK, success: true, message: "Seller medicines fetched", data: result });
   } catch (e) {
     next(e);
@@ -460,7 +794,9 @@ var getSellerMedicines2 = async (req, res, next) => {
 };
 var getAllMedicines2 = async (req, res, next) => {
   try {
-    const result = await medicineService.getAllMedicines(req.query);
+    const query = req.query;
+    console.log("query::", query);
+    const result = await medicineService.getAllMedicines(query);
     sendResponse_default(res, { statusCode: status3.OK, success: true, message: "Medicines fetched", data: result });
   } catch (e) {
     next(e);
@@ -595,7 +931,7 @@ var createOrder = async (customerId, payload, ip) => {
     return {
       medicineId: item.medicineId,
       medicineName: med.name,
-      medicineImage: med.image,
+      medicineImage: med.images?.[0],
       quantity: item.quantity,
       unitPrice,
       totalPrice: totalPrice2
@@ -711,15 +1047,23 @@ var createOrder = async (customerId, payload, ip) => {
   });
   return order;
 };
-var getMyOrders = async (customerId) => {
-  return prisma.order.findMany({
-    where: { customerId },
-    include: {
-      items: true,
-      payment: { select: { status: true, method: true, paidAt: true } }
-    },
-    orderBy: { createdAt: "desc" }
+var getMyOrders = async (customerId, query = {}) => {
+  const qb = new QueryBuilder(prisma.order, query, {
+    searchableFields: ["id", "status"],
+    // you can search by order id or status
+    filterableFields: ["status", "customerId"]
+    // allow filtering
   });
+  return qb.where({ customerId }).include({
+    items: true,
+    payment: {
+      select: {
+        status: true,
+        method: true,
+        paidAt: true
+      }
+    }
+  }).sort().paginate().execute();
 };
 var getOrderById = async (id, customerId) => {
   const order = await prisma.order.findFirst({
@@ -797,17 +1141,32 @@ var cancelOrder = async (id, customerId, ip) => {
     return updatedOrder;
   });
 };
-var getSellerOrders = async (sellerId) => {
-  return prisma.order.findMany({
-    where: { items: { some: { medicine: { sellerId } } } },
-    include: {
-      items: { where: { medicine: { sellerId } }, include: { medicine: true } },
-      customer: { select: { id: true, name: true, email: true, phone: true } },
-      address: true,
-      payment: { select: { status: true, method: true } }
-    },
-    orderBy: { createdAt: "desc" }
+var getSellerOrders = async (sellerId, query = {}) => {
+  const qb = new QueryBuilder(prisma.order, query, {
+    searchableFields: ["status"],
+    // basic search
+    filterableFields: ["status"]
+    // filter by order status
   });
+  return qb.where({
+    items: {
+      some: {
+        medicine: { sellerId }
+      }
+    }
+  }).include({
+    items: {
+      where: { medicine: { sellerId } },
+      include: { medicine: true }
+    },
+    customer: {
+      select: { id: true, name: true, email: true, phone: true }
+    },
+    address: true,
+    payment: {
+      select: { status: true, method: true }
+    }
+  }).sort().paginate().execute();
 };
 var updateOrderStatus = async (orderId, sellerId, newStatus) => {
   const validTransitions = {
@@ -945,7 +1304,8 @@ var createOrder2 = async (req, res, next) => {
 };
 var getMyOrders2 = async (req, res, next) => {
   try {
-    const result = await orderService.getMyOrders(req.user.id);
+    const query = req.query;
+    const result = await orderService.getMyOrders(req.user.id, query);
     sendResponse_default(res, { statusCode: status5.OK, success: true, message: "Orders fetched", data: result });
   } catch (e) {
     next(e);
@@ -969,7 +1329,8 @@ var cancelOrder2 = async (req, res, next) => {
 };
 var getSellerOrders2 = async (req, res, next) => {
   try {
-    const result = await orderService.getSellerOrders(req.user.id);
+    const query = req.query;
+    const result = await orderService.getSellerOrders(req.user.id, query);
     sendResponse_default(res, { statusCode: status5.OK, success: true, message: "Seller orders fetched", data: result });
   } catch (e) {
     next(e);
@@ -1026,16 +1387,20 @@ var createCategory = async (payload) => {
   });
   return category;
 };
-var getAllCategories = async () => {
-  const categories = await prisma.category.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      _count: {
-        select: { medicines: true }
-      }
-    }
+var getAllCategories = async (query = {}) => {
+  const queryBuilder = new QueryBuilder(prisma.category, query, {
+    searchableFields: ["name"],
+    // search categories by name
+    filterableFields: []
+    // add any filterable fields if needed
   });
-  return categories;
+  const result = await queryBuilder.search().filter().include({
+    _count: {
+      select: { medicines: true }
+      // include medicine counts
+    }
+  }).sort().paginate().execute();
+  return result;
 };
 var updateCategory = async (id, payload) => {
   const existing = await prisma.category.findUnique({ where: { id } });
@@ -1089,7 +1454,8 @@ var createCategory2 = async (req, res, next) => {
 };
 var getAllCategories2 = async (req, res, next) => {
   try {
-    const categories = await categoryService.getAllCategories();
+    const query = req.query;
+    const categories = await categoryService.getAllCategories(query);
     sendResponse_default(res, {
       statusCode: status6.OK,
       success: true,
@@ -1179,45 +1545,42 @@ var log = async (payload) => {
     }
   });
 };
-var getAuditLogs = async (query) => {
-  const page = parseInt(query.page || "1");
-  const limit = parseInt(query.limit || "20");
-  const skip = (page - 1) * limit;
-  const where = {};
-  if (query.entity) where.entity = query.entity;
-  if (query.entityId) where.entityId = query.entityId;
-  if (query.userId) where.userId = query.userId;
-  const [data, total] = await Promise.all([
-    prisma.auditLog.findMany({
-      where,
-      include: { user: { select: { id: true, name: true, email: true, role: true } } },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit
-    }),
-    prisma.auditLog.count({ where })
-  ]);
-  return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+var getAuditLogs = async (query = {}) => {
+  const qb = new QueryBuilder(prisma.auditLog, query, {
+    searchableFields: ["entity", "action"],
+    // adjust if you have 'action' or similar field
+    filterableFields: ["entity", "entityId", "userId"]
+  });
+  const result = await qb.search().filter().include({
+    user: {
+      select: { id: true, name: true, email: true, role: true }
+    }
+  }).sort().paginate().execute();
+  return result;
 };
 var auditService = { log, getAuditLogs };
 
 // src/modules/admin/admin.service.ts
-var getAllUsers = async () => {
-  return prisma.user.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      status: true,
-      phone: true,
-      image: true,
-      isEmailVerified: true,
-      lastLoginAt: true,
-      createdAt: true
-    }
+var getAllUsers = async (query = {}) => {
+  const queryBuilder = new QueryBuilder(prisma.user, query, {
+    searchableFields: ["name", "email", "phone"],
+    // searchable text fields
+    filterableFields: ["role", "status", "isEmailVerified"]
+    // filterable fields
   });
+  const result = await queryBuilder.search().filter().sort().paginate().selectFixed({
+    id: true,
+    name: true,
+    email: true,
+    role: true,
+    status: true,
+    phone: true,
+    image: true,
+    isEmailVerified: true,
+    lastLoginAt: true,
+    createdAt: true
+  }).execute();
+  return result;
 };
 var updateUserStatus = async (userId, newStatus, adminId, ipAddress) => {
   const user = await prisma.user.findUnique({
@@ -1286,7 +1649,8 @@ var adminService = {
 // src/modules/admin/admin.controller.ts
 var getAllUsers2 = async (req, res, next) => {
   try {
-    const users = await adminService.getAllUsers();
+    const query = req.query;
+    const users = await adminService.getAllUsers(query);
     sendResponse_default(res, {
       statusCode: status7.OK,
       success: true,
@@ -1395,14 +1759,18 @@ var deleteReview = async (id, userId, role) => {
   }
   return prisma.review.delete({ where: { id } });
 };
-var getAllReviews = async () => {
-  return prisma.review.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      user: { select: { id: true, name: true, image: true } },
-      medicine: { select: { id: true, name: true, image: true } }
-    }
+var getAllReviews = async (query = {}) => {
+  const queryBuilder = new QueryBuilder(prisma.review, query, {
+    searchableFields: ["comment"],
+    // embedded directly
+    filterableFields: ["rating", "medicineId", "userId"]
+    // embedded directly
   });
+  const result = await queryBuilder.search().filter().include({
+    user: { select: { id: true, name: true, image: true } },
+    medicine: { select: { id: true, name: true, images: true } }
+  }).sort().paginate().execute();
+  return result;
 };
 var reviewService = {
   createReview,
@@ -1439,7 +1807,8 @@ var deleteReview2 = async (req, res, next) => {
 };
 var getAllReviews2 = async (req, res, next) => {
   try {
-    const result = await reviewService.getAllReviews();
+    const query = req.query;
+    const result = await reviewService.getAllReviews(query);
     sendResponse_default(res, { statusCode: status8.OK, success: true, message: "Reviews fetched", data: result });
   } catch (e) {
     next(e);
@@ -2293,8 +2662,13 @@ var createCoupon = async (payload) => {
     }
   });
 };
-var getAllCoupons = async () => {
-  return prisma.coupon.findMany({ orderBy: { createdAt: "desc" } });
+var getAllCoupons = async (query = {}) => {
+  const queryBuilder = new QueryBuilder(prisma.coupon, query, {
+    searchableFields: ["code", "description"],
+    filterableFields: ["isActive", "discountType"]
+  });
+  const result = await queryBuilder.search().filter().sort().paginate().execute();
+  return result;
 };
 var updateCoupon = async (id, payload) => {
   return prisma.coupon.update({
@@ -2338,7 +2712,8 @@ var createCoupon2 = async (req, res, next) => {
 };
 var getAllCoupons2 = async (req, res, next) => {
   try {
-    const result = await couponService.getAllCoupons();
+    const query = req.query;
+    const result = await couponService.getAllCoupons(query);
     sendResponse_default(res, { statusCode: status11.OK, success: true, message: "Coupons fetched", data: result });
   } catch (e) {
     next(e);
@@ -2605,100 +2980,93 @@ var getPaymentByOrder = async (orderId, customerId) => {
     include: { logs: { orderBy: { createdAt: "desc" } } }
   });
 };
-var getMyPayments = async (customerId) => {
-  return prisma.payment.findMany({
-    where: { order: { customerId } },
-    include: {
-      order: {
-        select: {
-          id: true,
-          status: true,
-          totalPrice: true,
-          subtotal: true,
-          shippingFee: true,
-          couponDiscount: true,
-          createdAt: true,
-          items: {
-            select: {
-              medicineName: true,
-              quantity: true,
-              unitPrice: true,
-              totalPrice: true
-            }
+var getMyPayments = async (customerId, query = {}) => {
+  const qb = new QueryBuilder(prisma.payment, query, {
+    searchableFields: ["id", "orderId"],
+    // you can search by payment id or order id
+    filterableFields: ["status", "method", "order.customerId"]
+    // filterable fields
+  });
+  return qb.where({ order: { customerId } }).include({
+    order: {
+      select: {
+        id: true,
+        status: true,
+        totalPrice: true,
+        subtotal: true,
+        shippingFee: true,
+        couponDiscount: true,
+        createdAt: true,
+        items: {
+          select: {
+            medicineName: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true
           }
         }
-      },
-      logs: {
-        orderBy: { createdAt: "desc" },
-        take: 1
-        // latest log only
       }
     },
-    orderBy: { createdAt: "desc" }
-  });
+    logs: { orderBy: { createdAt: "desc" }, take: 1 }
+  }).sort().paginate().execute();
 };
-var getSellerPayments = async (sellerId) => {
-  return prisma.payment.findMany({
-    where: {
-      order: {
-        items: { some: { medicine: { sellerId } } }
-      }
-    },
-    include: {
-      order: {
-        select: {
-          id: true,
-          status: true,
-          totalPrice: true,
-          subtotal: true,
-          shippingFee: true,
-          createdAt: true,
-          customer: {
-            select: { id: true, name: true, phone: true, email: true }
-          },
-          items: {
-            where: { medicine: { sellerId } },
-            select: {
-              medicineName: true,
-              quantity: true,
-              unitPrice: true,
-              totalPrice: true
-            }
+var getSellerPayments = async (sellerId, query = {}) => {
+  const qb = new QueryBuilder(prisma.payment, query, {
+    searchableFields: ["id", "orderId"],
+    filterableFields: ["status", "method"]
+  });
+  return qb.where({
+    order: { items: { some: { medicine: { sellerId } } } }
+  }).include({
+    order: {
+      select: {
+        id: true,
+        status: true,
+        totalPrice: true,
+        subtotal: true,
+        shippingFee: true,
+        createdAt: true,
+        customer: { select: { id: true, name: true, phone: true, email: true } },
+        items: {
+          where: { medicine: { sellerId } },
+          select: {
+            medicineName: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true
           }
         }
       }
-    },
-    orderBy: { createdAt: "desc" }
-  });
+    }
+  }).sort().paginate().execute();
 };
-var getAllPayments = async () => {
-  return prisma.payment.findMany({
-    include: {
-      order: {
-        select: {
-          id: true,
-          status: true,
-          totalPrice: true,
-          subtotal: true,
-          shippingFee: true,
-          createdAt: true,
-          customer: {
-            select: { id: true, name: true, email: true, phone: true, role: true }
-          },
-          items: {
-            select: {
-              medicineName: true,
-              quantity: true,
-              unitPrice: true,
-              totalPrice: true
-            }
+var getAllPayments = async (query = {}) => {
+  const qb = new QueryBuilder(prisma.payment, query, {
+    searchableFields: ["id", "orderId"],
+    filterableFields: ["status", "method", "order.customerId", "order.sellerId"]
+  });
+  return qb.include({
+    order: {
+      select: {
+        id: true,
+        status: true,
+        totalPrice: true,
+        subtotal: true,
+        shippingFee: true,
+        createdAt: true,
+        customer: { select: { id: true, name: true, email: true, phone: true, role: true } },
+        items: {
+          select: {
+            medicineName: true,
+            quantity: true,
+            unitPrice: true,
+            totalPrice: true
           }
         }
-      },
-      logs: { orderBy: { createdAt: "desc" } }
+      }
     },
-    orderBy: { createdAt: "desc" }
-  });
+    logs: { orderBy: { createdAt: "desc" } }
+  }).sort().paginate().execute();
 };
 var refundPayment = async (paymentId, adminId, ip) => {
   const payment = await prisma.payment.findUnique({
@@ -2818,7 +3186,8 @@ var getPaymentByOrder2 = async (req, res, next) => {
 };
 var getMyPayments2 = async (req, res, next) => {
   try {
-    const result = await paymentService.getMyPayments(req.user.id);
+    const query = req.query;
+    const result = await paymentService.getMyPayments(req.user.id, query);
     sendResponse_default(res, { statusCode: status13.OK, success: true, message: "My payments fetched", data: result });
   } catch (e) {
     next(e);
@@ -2826,7 +3195,8 @@ var getMyPayments2 = async (req, res, next) => {
 };
 var getSellerPayments2 = async (req, res, next) => {
   try {
-    const result = await paymentService.getSellerPayments(req.user.id);
+    const query = req.query;
+    const result = await paymentService.getSellerPayments(req.user.id, query);
     sendResponse_default(res, { statusCode: status13.OK, success: true, message: "Seller payments fetched", data: result });
   } catch (e) {
     next(e);
@@ -2834,7 +3204,8 @@ var getSellerPayments2 = async (req, res, next) => {
 };
 var getAllPayments2 = async (req, res, next) => {
   try {
-    const result = await paymentService.getAllPayments();
+    const query = req.query;
+    const result = await paymentService.getAllPayments(query);
     sendResponse_default(res, { statusCode: status13.OK, success: true, message: "All payments fetched", data: result });
   } catch (e) {
     next(e);
