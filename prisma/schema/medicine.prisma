@@ -1,11 +1,21 @@
 model Medicine {
-     id           String  @id @default(uuid())
-     name         String
-     description  String
-     price        Float
-     stock        Int
-     image        String?
-     manufacturer String?
+     id                   String   @id @default(uuid())
+     name                 String
+     genericName          String?
+     slug                 String   @unique
+     description          String
+     price                Float
+     discountPrice        Float?
+     stock                Int      @default(0)
+     image                String?
+     images               String[] // additional gallery images
+     manufacturer         String?
+     brand                String?
+     dosageForm           String? // Tablet, Syrup, Injection...
+     strength             String? // 500mg, 5ml...
+     unit                 String   @default("piece") 
+     isActive             Boolean  @default(true)
+     sku                  String?  @unique
 
      categoryId String
      category   Category @relation(fields: [categoryId], references: [id])
@@ -13,9 +23,28 @@ model Medicine {
      sellerId String
      seller   User   @relation("SellerMedicines", fields: [sellerId], references: [id])
 
-     reviews    Review[]
-     orderItems OrderItem[]
+     reviews           Review[]
+     orderItems        OrderItem[]
+     batches           MedicineBatch[]
 
      createdAt DateTime @default(now())
      updatedAt DateTime @updatedAt
+
+     @@map("medicines")
+}
+
+model MedicineBatch {
+     id          String   @id @default(uuid())
+     medicineId  String
+     medicine    Medicine @relation(fields: [medicineId], references: [id], onDelete: Cascade)
+     batchNumber String
+     quantity    Int
+     expiryDate  DateTime
+     costPrice   Float
+     isActive    Boolean  @default(true)
+
+     createdAt DateTime @default(now())
+     updatedAt DateTime @updatedAt
+
+     @@map("medicine_batches")
 }

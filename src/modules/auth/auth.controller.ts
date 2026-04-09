@@ -7,12 +7,7 @@ const signUpUser = async (req: Request, res: Response, next: NextFunction) => {
      try {
           const result = await authService.signUpUser(req.body)
 
-          // res.cookie("token", result.token, {
-          //      httpOnly: true,
-          //      secure: process.env.NODE_ENV === "production",
-          //      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-          //      maxAge: 7 * 24 * 60 * 60 * 1000
-          // })
+        
 
           sendResponse(res, {
                statusCode: status.CREATED,
@@ -30,13 +25,7 @@ const signInUser = async (req: Request, res: Response, next: NextFunction) => {
      try {
           const result = await authService.signInUser(req.body)
 
-          // res.cookie("token", result.token, {
-          //      httpOnly: true,
-          //      secure: process.env.NODE_ENV === "production",
-          //      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-          //      maxAge: 7 * 24 * 60 * 60 * 1000
-          // })
-
+         
           sendResponse(res, {
                statusCode: status.OK,
                success: true,

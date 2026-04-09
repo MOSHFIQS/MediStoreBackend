@@ -1,30 +1,40 @@
 import { Router } from "express";
 import { authRouter } from './../modules/auth/auth.route';
-import { medicineRouter } from "../modules/medicines/medicine.route";
-import { orderRouter } from "../modules/orders/order.route";
-import { categoryRouter } from "../modules/categories/category.route";
+import { medicineRouter } from "../modules/medicine/medicine.route";
+import { orderRouter } from "../modules/order/order.route";
+import { categoryRouter } from "../modules/category/category.route";
 import { adminRouter } from "../modules/admin/admin.route";
-import { reviewRouter } from "../modules/reviews/review.route";
+import { reviewRouter } from "../modules/review/review.route";
 import { userRouter } from './../modules/user/user.route';
+import { addressRouter } from './../modules/address/address.route';
+import { couponRouter } from './../modules/coupon/coupon.route';
+import { notificationRouter } from './../modules/notification/notification.route';
+import { paymentRouter } from './../modules/payment/payment.route';
+import { FileRoutes } from "../modules/file/file.route";
+import { auditRouter } from "../modules/audit/audit.route";
 
 
 const router = Router();
 
 const moduleRoutes = [
      {
+          path: '/file',
+          route: FileRoutes,
+     },
+     {
           path: '/auth',
           route: authRouter,
      },
      {
-          path: '/medicines',
+          path: '/medicine',
           route: medicineRouter,
      },
      {
-          path: '/orders',
+          path: '/order',
           route: orderRouter,
      },
      {
-          path: '/categories',
+          path: '/category',
           route: categoryRouter,
      },
      {
@@ -32,12 +42,32 @@ const moduleRoutes = [
           route: adminRouter,
      },
      {
+          path: '/user',
+          route: userRouter,
+     },
+     {
           path: '/review',
           route: reviewRouter,
      },
      {
-          path: '/user',
-          route: userRouter,
+          path: '/address',
+          route: addressRouter,
+     },
+     {
+          path: '/coupon',
+          route: couponRouter,
+     },
+     {
+          path: '/notification',
+          route: notificationRouter,
+     },
+     {
+          path: '/payment',
+          route: paymentRouter,
+     },
+     {
+          path: '/audit',
+          route: auditRouter,
      },
 
 ];

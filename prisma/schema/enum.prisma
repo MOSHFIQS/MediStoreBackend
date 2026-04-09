@@ -1,0 +1,50 @@
+enum Role {
+     CUSTOMER
+     SELLER
+     ADMIN
+}
+
+enum UserStatus {
+     ACTIVE
+     BANNED
+     SUSPENDED
+}
+
+enum OrderStatus {
+     PLACED
+     CONFIRMED
+     PROCESSING
+     SHIPPED
+     DELIVERED
+     CANCELLED
+     REFUNDED
+}
+
+enum PaymentStatus {
+     PENDING
+     INITIATED
+     SUCCESS
+     FAILED
+     CANCELLED
+     REFUNDED
+}
+
+enum PaymentMethod {
+     SSLCOMMERZ
+     CASH_ON_DELIVERY
+     BANK_TRANSFER
+}
+
+enum PrescriptionStatus {
+     PENDING
+     APPROVED
+     REJECTED
+}
+
+enum NotificationType {
+     ORDER_UPDATE
+     PAYMENT_UPDATE
+     PRESCRIPTION_STATUS
+     SYSTEM
+     PROMOTION
+}

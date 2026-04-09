@@ -55,9 +55,57 @@ const updateProfile = async (req: Request, res: Response, next: NextFunction) =>
 }
 
 
+const adminStatistics = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+          const data = await userService.getAdminStatistics();
+          sendResponse(res, {
+               statusCode: status.OK,
+               success: true,
+               message: "Statistics Fetched",
+               data: data,
+          })
+     } catch (err) {
+          next(err)
+     }
+}
+
+const customerStatistics = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+          const userId = req.user!.id;
+          const data = await userService.getCustomerStatistics(userId);
+          sendResponse(res, {
+               statusCode: status.OK,
+               success: true,
+               message: "Statistics Fetched",
+               data: data,
+          })
+     } catch (err) {
+          next(err)
+     }
+}
+
+
+const sellerStatistics = async (req: Request, res: Response, next: NextFunction) => {
+     try {
+          const data = await userService.getSellerStatistics(req.user!.id);
+          sendResponse(res, {
+               statusCode: status.OK,
+               success: true,
+               message: "Statistics Fetched",
+               data: data,
+          })
+     } catch (err) {
+          next(err)
+     }
+}
+
+
 
 
 export const userController = {
      getMe,
-     updateProfile
+     updateProfile,
+     adminStatistics,
+     customerStatistics,
+     sellerStatistics
 }
