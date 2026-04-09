@@ -1,5 +1,7 @@
 import { Prisma } from "../../../generated/prisma/client"
+import { IQueryParams } from "../../interfaces/query.interface"
 import { prisma } from "../../lib/prisma"
+import { QueryBuilder } from "../../utils/QueryBuilder"
 
 
 const log = async (payload: {
@@ -24,34 +26,24 @@ const log = async (payload: {
      })
 }
 
-const getAuditLogs = async (query: {
-     entity?: string
-     entityId?: string
-     userId?: string
-     page?: string
-     limit?: string
-}) => {
-     const page = parseInt(query.page || "1")
-     const limit = parseInt(query.limit || "20")
-     const skip = (page - 1) * limit
+const getAuditLogs = async (query: IQueryParams = {}) => {
+     const qb = new QueryBuilder(prisma.auditLog, query, {
+          searchableFields: ['entity', 'action'], // adjust if you have 'action' or similar field
+          filterableFields: ['entity', 'entityId', 'userId'],
+     });
 
-     const where: any = {}
-     if (query.entity) where.entity = query.entity
-     if (query.entityId) where.entityId = query.entityId
-     if (query.userId) where.userId = query.userId
+     const result = await qb
+          .search()
+          .filter()
+          .include({
+               user: {
+                    select: { id: true, name: true, email: true, role: true },
+               },
+          })
+          .sort()
+          .paginate()
+          .execute();
 
-     const [data, total] = await Promise.all([
-          prisma.auditLog.findMany({
-               where,
-               include: { user: { select: { id: true, name: true, email: true, role: true } } },
-               orderBy: { createdAt: "desc" },
-               skip,
-               take: limit
-          }),
-          prisma.auditLog.count({ where })
-     ])
-
-     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } }
-}
-
+     return result;
+};
 export const auditService = { log, getAuditLogs }

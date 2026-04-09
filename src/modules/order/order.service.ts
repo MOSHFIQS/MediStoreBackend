@@ -1,4 +1,6 @@
+import { IQueryParams } from "../../interfaces/query.interface"
 import { prisma } from "../../lib/prisma"
+import { QueryBuilder } from "../../utils/QueryBuilder"
 
 interface OrderItemInput {
      medicineId: string
@@ -89,7 +91,7 @@ const createOrder = async (customerId: string, payload: CreateOrderPayload, ip?:
           return {
                medicineId: item.medicineId,
                medicineName: med.name,
-               medicineImage: med.image,
+               medicineImage: med.images?.[0],
                quantity: item.quantity,
                unitPrice,
                totalPrice,
@@ -230,15 +232,27 @@ const createOrder = async (customerId: string, payload: CreateOrderPayload, ip?:
      return order;
 };
 
-const getMyOrders = async (customerId: string) => {
-     return prisma.order.findMany({
-          where: { customerId },
-          include: {
-               items: true,
-               payment: { select: { status: true, method: true, paidAt: true } },
-          },
-          orderBy: { createdAt: "desc" },
+const getMyOrders = async (customerId: string, query: IQueryParams = {}) => {
+     const qb = new QueryBuilder(prisma.order, query, {
+          searchableFields: ['id', 'status'], // you can search by order id or status
+          filterableFields: ['status', 'customerId'], // allow filtering
      });
+
+     return qb
+          .where({ customerId }) // restrict to current user
+          .include({
+               items: true,
+               payment: {
+                    select: {
+                         status: true,
+                         method: true,
+                         paidAt: true,
+                    },
+               },
+          })
+          .sort() // default sort
+          .paginate()
+          .execute();
 };
 
 const getOrderById = async (id: string, customerId: string) => {
@@ -329,17 +343,36 @@ const cancelOrder = async (id: string, customerId: string, ip?: string) => {
      });
 };
 
-const getSellerOrders = async (sellerId: string) => {
-     return prisma.order.findMany({
-          where: { items: { some: { medicine: { sellerId } } } },
-          include: {
-               items: { where: { medicine: { sellerId } }, include: { medicine: true } },
-               customer: { select: { id: true, name: true, email: true, phone: true } },
-               address: true,
-               payment: { select: { status: true, method: true } },
-          },
-          orderBy: { createdAt: "desc" },
+const getSellerOrders = async (sellerId: string, query: IQueryParams = {}) => {
+     const qb = new QueryBuilder(prisma.order, query, {
+          searchableFields: ['status'], // basic search
+          filterableFields: ['status'], // filter by order status
      });
+
+     return qb
+          .where({
+               items: {
+                    some: {
+                         medicine: { sellerId },
+                    },
+               },
+          })
+          .include({
+               items: {
+                    where: { medicine: { sellerId } },
+                    include: { medicine: true },
+               },
+               customer: {
+                    select: { id: true, name: true, email: true, phone: true },
+               },
+               address: true,
+               payment: {
+                    select: { status: true, method: true },
+               },
+          })
+          .sort()
+          .paginate()
+          .execute();
 };
 
 const updateOrderStatus = async (orderId: string, sellerId: string, newStatus: string) => {

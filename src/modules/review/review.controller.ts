@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express"
 import status from "http-status"
 import sendResponse from "../../utils/sendResponse"
 import { reviewService } from "./review.service"
+import { IQueryParams } from "../../interfaces/query.interface"
 
 const createReview = async (req: Request, res: Response, next: NextFunction) => {
      try {
@@ -27,7 +28,8 @@ const deleteReview = async (req: Request, res: Response, next: NextFunction) => 
 
 const getAllReviews = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const result = await reviewService.getAllReviews()
+          const query = req.query;
+          const result = await reviewService.getAllReviews(query as IQueryParams)
           sendResponse(res, { statusCode: status.OK, success: true, message: "Reviews fetched", data: result })
      } catch (e) { next(e) }
 }

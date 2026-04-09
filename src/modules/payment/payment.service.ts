@@ -1,7 +1,9 @@
 import { envVars } from "../../config/env"
+import { IQueryParams } from "../../interfaces/query.interface"
 import { prisma } from "../../lib/prisma"
 // @ts-ignore
 import SSLCommerzPayment from "sslcommerz-lts"
+import { QueryBuilder } from "../../utils/QueryBuilder"
 
 const STORE_ID = envVars.SSLCOMMERZ.SSL_STORE_ID
 const STORE_PASS = envVars.SSLCOMMERZ.SSL_STORE_PASS
@@ -184,10 +186,15 @@ const getPaymentByOrder = async (orderId: string, customerId: string) => {
 }
 
 
-const getMyPayments = async (customerId: string) => {
-     return prisma.payment.findMany({
-          where: { order: { customerId } },
-          include: {
+const getMyPayments = async (customerId: string, query: IQueryParams = {}) => {
+     const qb = new QueryBuilder(prisma.payment, query, {
+          searchableFields: ['id', 'orderId'], // you can search by payment id or order id
+          filterableFields: ['status', 'method', 'order.customerId'], // filterable fields
+     });
+
+     return qb
+          .where({ order: { customerId } })
+          .include({
                order: {
                     select: {
                          id: true,
@@ -203,27 +210,28 @@ const getMyPayments = async (customerId: string) => {
                                    quantity: true,
                                    unitPrice: true,
                                    totalPrice: true,
-                              }
-                         }
-                    }
+                              },
+                         },
+                    },
                },
-               logs: {
-                    orderBy: { createdAt: "desc" },
-                    take: 1 // latest log only
-               }
-          },
-          orderBy: { createdAt: "desc" }
-     })
-}
+               logs: { orderBy: { createdAt: 'desc' }, take: 1 },
+          })
+          .sort()
+          .paginate()
+          .execute();
+};
 
-const getSellerPayments = async (sellerId: string) => {
-     return prisma.payment.findMany({
-          where: {
-               order: {
-                    items: { some: { medicine: { sellerId } } }
-               }
-          },
-          include: {
+const getSellerPayments = async (sellerId: string, query: IQueryParams = {}) => {
+     const qb = new QueryBuilder(prisma.payment, query, {
+          searchableFields: ['id', 'orderId'],
+          filterableFields: ['status', 'method'],
+     });
+
+     return qb
+          .where({
+               order: { items: { some: { medicine: { sellerId } } } },
+          })
+          .include({
                order: {
                     select: {
                          id: true,
@@ -232,9 +240,7 @@ const getSellerPayments = async (sellerId: string) => {
                          subtotal: true,
                          shippingFee: true,
                          createdAt: true,
-                         customer: {
-                              select: { id: true, name: true, phone: true, email: true }
-                         },
+                         customer: { select: { id: true, name: true, phone: true, email: true } },
                          items: {
                               where: { medicine: { sellerId } },
                               select: {
@@ -242,18 +248,24 @@ const getSellerPayments = async (sellerId: string) => {
                                    quantity: true,
                                    unitPrice: true,
                                    totalPrice: true,
-                              }
-                         }
-                    }
-               }
-          },
-          orderBy: { createdAt: "desc" }
-     })
-}
+                              },
+                         },
+                    },
+               },
+          })
+          .sort()
+          .paginate()
+          .execute();
+};
 
-const getAllPayments = async () => {
-     return prisma.payment.findMany({
-          include: {
+const getAllPayments = async (query: IQueryParams = {}) => {
+     const qb = new QueryBuilder(prisma.payment, query, {
+          searchableFields: ['id', 'orderId'],
+          filterableFields: ['status', 'method', 'order.customerId', 'order.sellerId'],
+     });
+
+     return qb
+          .include({
                order: {
                     select: {
                          id: true,
@@ -262,24 +274,25 @@ const getAllPayments = async () => {
                          subtotal: true,
                          shippingFee: true,
                          createdAt: true,
-                         customer: {
-                              select: { id: true, name: true, email: true, phone: true, role: true }
-                         },
+                         customer: { select: { id: true, name: true, email: true, phone: true, role: true } },
                          items: {
                               select: {
                                    medicineName: true,
                                    quantity: true,
                                    unitPrice: true,
                                    totalPrice: true,
-                              }
-                         }
-                    }
+                              },
+                         },
+                    },
                },
-               logs: { orderBy: { createdAt: "desc" } }
-          },
-          orderBy: { createdAt: "desc" }
-     })
-}
+               logs: { orderBy: { createdAt: 'desc' } },
+          })
+          .sort()
+          .paginate()
+          .execute();
+};
+
+
 
 const refundPayment = async (paymentId: string, adminId: string, ip?: string) => {
      const payment = await prisma.payment.findUnique({

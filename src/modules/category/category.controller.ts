@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express"
 import status from "http-status"
 import sendResponse from "../../utils/sendResponse"
 import { categoryService } from "./category.service"
+import { IQueryParams } from "../../interfaces/query.interface"
 
 
 
@@ -28,7 +29,8 @@ const createCategory = async (req: Request, res: Response, next: NextFunction) =
 
 const getAllCategories = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const categories = await categoryService.getAllCategories()
+          const query = req.query;
+          const categories = await categoryService.getAllCategories(query as IQueryParams)
 
           sendResponse(res, {
                statusCode: status.OK,

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express"
 import status from "http-status"
 import sendResponse from "../../utils/sendResponse"
 import { paymentService } from "./payment.service"
+import { IQueryParams } from "../../interfaces/query.interface"
 
 const FRONTEND_URL = process.env.FRONTEND_URL!
 
@@ -50,24 +51,26 @@ const getPaymentByOrder = async (req: Request, res: Response, next: NextFunction
      } catch (e) { next(e) }
 }
 
-
 const getMyPayments = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const result = await paymentService.getMyPayments((req as any).user.id)
+          const query = req.query;
+          const result = await paymentService.getMyPayments((req as any).user.id, query as IQueryParams)
           sendResponse(res, { statusCode: status.OK, success: true, message: "My payments fetched", data: result })
      } catch (e) { next(e) }
 }
 
 const getSellerPayments = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const result = await paymentService.getSellerPayments((req as any).user.id)
+          const query = req.query;
+          const result = await paymentService.getSellerPayments((req as any).user.id, query as IQueryParams)
           sendResponse(res, { statusCode: status.OK, success: true, message: "Seller payments fetched", data: result })
      } catch (e) { next(e) }
 }
 
 const getAllPayments = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const result = await paymentService.getAllPayments()
+          const query = req.query;
+          const result = await paymentService.getAllPayments(query as IQueryParams)
           sendResponse(res, { statusCode: status.OK, success: true, message: "All payments fetched", data: result })
      } catch (e) { next(e) }
 }

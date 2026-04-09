@@ -1,4 +1,6 @@
+import { IQueryParams } from "../../interfaces/query.interface"
 import { prisma } from "../../lib/prisma"
+import { QueryBuilder } from "../../utils/QueryBuilder"
 
 interface CouponPayload {
      code: string
@@ -21,9 +23,21 @@ const createCoupon = async (payload: CouponPayload) => {
      })
 }
 
-const getAllCoupons = async () => {
-     return prisma.coupon.findMany({ orderBy: { createdAt: "desc" } })
-}
+const getAllCoupons = async (query: IQueryParams = {}) => {
+     const queryBuilder = new QueryBuilder(prisma.coupon, query, {
+          searchableFields: ['code', 'description'], 
+          filterableFields: ['isActive', 'discountType' ], 
+     });
+
+     const result = await queryBuilder
+          .search() // search by code or description
+          .filter() // filter by isActive, type, discount
+          .sort() // default sort
+          .paginate()
+          .execute();
+
+     return result;
+};
 
 const updateCoupon = async (id: string, payload: Partial<CouponPayload>) => {
      return prisma.coupon.update({

@@ -1,11 +1,21 @@
 import { UserStatus } from "../../../generated/prisma/enums"
+import { IQueryParams } from "../../interfaces/query.interface";
 import { prisma } from "../../lib/prisma"
+import { QueryBuilder } from "../../utils/QueryBuilder";
 import { auditService } from "../audit/audit.service"
 
-const getAllUsers = async () => {
-     return prisma.user.findMany({
-          orderBy: { createdAt: "desc" },
-          select: {
+const getAllUsers = async (query: IQueryParams = {}) => {
+     const queryBuilder = new QueryBuilder(prisma.user, query, {
+          searchableFields: ['name', 'email', 'phone'], // searchable text fields
+          filterableFields: ['role', 'status', 'isEmailVerified'], // filterable fields
+     });
+
+     const result = await queryBuilder
+          .search() // search by name, email, or phone
+          .filter() // filter by role, status, or email verification
+          .sort() // default sort
+          .paginate() // supports query limit/page
+          .selectFixed({
                id: true,
                name: true,
                email: true,
@@ -16,9 +26,13 @@ const getAllUsers = async () => {
                isEmailVerified: true,
                lastLoginAt: true,
                createdAt: true,
-          },
-     })
-}
+          })
+          .execute();
+
+     return result;
+};
+
+
 
 const updateUserStatus = async (
      userId: string,

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express"
 import status from "http-status"
 import sendResponse from "../../utils/sendResponse"
 import { couponService } from "./coupon.service"
+import { IQueryParams } from "../../interfaces/query.interface"
 
 const createCoupon = async (req: Request, res: Response, next: NextFunction) => {
      try {
@@ -12,7 +13,8 @@ const createCoupon = async (req: Request, res: Response, next: NextFunction) => 
 
 const getAllCoupons = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const result = await couponService.getAllCoupons()
+          const query = req.query;
+          const result = await couponService.getAllCoupons(query as IQueryParams)
           sendResponse(res, { statusCode: status.OK, success: true, message: "Coupons fetched", data: result })
      } catch (e) { next(e) }
 }

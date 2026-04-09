@@ -1,5 +1,7 @@
 import { OrderStatus } from "../../../generated/prisma/enums"
+import { IQueryParams } from "../../interfaces/query.interface"
 import { prisma } from "../../lib/prisma"
+import { QueryBuilder } from "../../utils/QueryBuilder"
 
 interface CreateMedicinePayload {
      name: string
@@ -88,55 +90,44 @@ const deleteMedicine = async (id: string, sellerId: string) => {
 
 
 
-const getSellerMedicines = async (sellerId: string) => {
-     return prisma.medicine.findMany({
-          where: { sellerId },
-          include: { category: true },
-          orderBy: { createdAt: "desc" }
-     })
-}
+const getSellerMedicines = async (sellerId: string, query: IQueryParams = {}) => {
+     const qb = new QueryBuilder(prisma.medicine, query, {
+          searchableFields: ['name', 'genericName', 'manufacturer'], // search by medicine name
+          filterableFields: ['categoryId', 'price', 'stock'], // filters
+     });
 
-const getAllMedicines = async (query: {
-     search?: string
-     categoryId?: string
-     minPrice?: string
-     maxPrice?: string
-     page?: string
-     limit?: string
-}) => {
-     const page = parseInt(query.page || "1")
-     const limit = parseInt(query.limit || "12")
-     const skip = (page - 1) * limit
+     return qb
+          .where({ sellerId }) // restrict to seller
+          .include({ category: true })
+          .sort() // default sort
+          .paginate()
+          .execute();
+};
 
-     const where: any = { isActive: true }
-     if (query.search) {
-          where.OR = [
-               { name: { contains: query.search, mode: "insensitive" } },
-               { genericName: { contains: query.search, mode: "insensitive" } },
-               { manufacturer: { contains: query.search, mode: "insensitive" } }
-          ]
-     }
-     if (query.categoryId) where.categoryId = query.categoryId
-     if (query.minPrice || query.maxPrice) {
-          where.price = {}
-          if (query.minPrice) where.price.gte = parseFloat(query.minPrice)
-          if (query.maxPrice) where.price.lte = parseFloat(query.maxPrice)
-     }
+const getAllMedicines = async (query: IQueryParams = {}) => {
+     const qb = new QueryBuilder(prisma.medicine, query, {
+          searchableFields: ['name', 'genericName', 'manufacturer'],
+          filterableFields: ['categoryId'],
+     });
 
+     const result = await qb
+          .search()
+          .filter()
+          .where({
+               isActive: true,
+          })
+          .include({
+               category: true,
+               seller: {
+                    select: { id: true, name: true },
+               },
+          })
+          .sort()
+          .paginate()
+          .execute();
 
-     const [data, total] = await Promise.all([
-          prisma.medicine.findMany({
-               where,
-               include: { category: true, seller: { select: { id: true, name: true } } },
-               skip,
-               take: limit,
-               orderBy: { createdAt: "desc" }
-          }),
-          prisma.medicine.count({ where })
-     ])
-
-     return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } }
-}
+     return result;
+};
 
 const getMedicineById = async (id: string) => {
      const medicine = await prisma.medicine.findFirst({

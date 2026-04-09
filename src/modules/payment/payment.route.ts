@@ -24,6 +24,4 @@ router.patch("/admin/:id/refund", auth(Role.ADMIN), paymentController.refundPaym
 router.get("/seller", auth(Role.SELLER), paymentController.getSellerPayments)
 
 
-
-
 export const paymentRouter = router

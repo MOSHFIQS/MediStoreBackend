@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express"
 import status from "http-status"
 import sendResponse from "../../utils/sendResponse"
 import { orderService } from "./order.service"
+import { IQueryParams } from "../../interfaces/query.interface"
 
 const createOrder = async (req: Request, res: Response, next: NextFunction) => {
      try {
@@ -12,7 +13,8 @@ const createOrder = async (req: Request, res: Response, next: NextFunction) => {
 
 const getMyOrders = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const result = await orderService.getMyOrders((req as any).user.id)
+          const query = req.query;
+          const result = await orderService.getMyOrders((req as any).user.id, query as IQueryParams)
           sendResponse(res, { statusCode: status.OK, success: true, message: "Orders fetched", data: result })
      } catch (e) { next(e) }
 }
@@ -33,7 +35,8 @@ const cancelOrder = async (req: Request, res: Response, next: NextFunction) => {
 
 const getSellerOrders = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const result = await orderService.getSellerOrders((req as any).user.id)
+          const query = req.query;
+          const result = await orderService.getSellerOrders((req as any).user.id, query as IQueryParams)
           sendResponse(res, { statusCode: status.OK, success: true, message: "Seller orders fetched", data: result })
      } catch (e) { next(e) }
 }

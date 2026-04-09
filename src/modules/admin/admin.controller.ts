@@ -2,10 +2,12 @@ import { Request, Response, NextFunction } from "express"
 import sendResponse from "../../utils/sendResponse"
 import status from "http-status"
 import { adminService } from "./admin.service"
+import { IQueryParams } from "../../interfaces/query.interface"
 
 const getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const users = await adminService.getAllUsers()
+          const query = req.query;
+          const users = await adminService.getAllUsers(query as IQueryParams)
           sendResponse(res, {
                statusCode: status.OK,
                success: true,

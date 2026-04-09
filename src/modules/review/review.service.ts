@@ -1,4 +1,6 @@
+import { IQueryParams } from "../../interfaces/query.interface";
 import { prisma } from "../../lib/prisma"
+import { QueryBuilder } from "../../utils/QueryBuilder";
 
 const createReview = async (userId: string, payload: { medicineId: string; rating: number; title?: string; comment: string }) => {
      // Check if user purchased this medicine
@@ -37,19 +39,29 @@ const deleteReview = async (id: string, userId: string, role: string) => {
      return prisma.review.delete({ where: { id } })
 }
 
-const getAllReviews = async () => {
-     return prisma.review.findMany({
-          orderBy: { createdAt: "desc" },
-          include: {
+const getAllReviews = async (query: IQueryParams = {}) => {
+     const queryBuilder = new QueryBuilder(prisma.review, query, {
+          searchableFields: ['comment'], // embedded directly
+          filterableFields: ['rating', 'medicineId', 'userId'], // embedded directly
+     });
+
+     const result = await queryBuilder
+          .search() 
+          .filter() 
+          .include({
                user: { select: { id: true, name: true, image: true } },
-               medicine: { select: { id: true, name: true, image: true } }
-          }
-     })
-}
+               medicine: { select: { id: true, name: true, images: true } },
+          })
+          .sort()
+          .paginate()
+          .execute();
+
+     return result;
+};
 
 export const reviewService = {
      createReview,
-     getAllReviews,   
+     getAllReviews,
      getMedicineReviews,
      deleteReview
 }

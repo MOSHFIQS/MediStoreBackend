@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express"
 import status from "http-status"
 import sendResponse from "../../utils/sendResponse"
 import { medicineService } from "./medicine.service"
+import { IQueryParams } from "../../interfaces/query.interface"
 
 const createMedicine = async (req: Request, res: Response, next: NextFunction) => {
      try {
@@ -26,14 +27,17 @@ const deleteMedicine = async (req: Request, res: Response, next: NextFunction) =
 
 const getSellerMedicines = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const result = await medicineService.getSellerMedicines((req as any).user.id)
+          const query = req.query;
+          const result = await medicineService.getSellerMedicines((req as any).user.id, query as IQueryParams)
           sendResponse(res, { statusCode: status.OK, success: true, message: "Seller medicines fetched", data: result })
      } catch (e) { next(e) }
 }
 
 const getAllMedicines = async (req: Request, res: Response, next: NextFunction) => {
      try {
-          const result = await medicineService.getAllMedicines(req.query as any)
+          const query = req.query;
+          console.log("query::",query);
+          const result = await medicineService.getAllMedicines(query as IQueryParams)
           sendResponse(res, { statusCode: status.OK, success: true, message: "Medicines fetched", data: result })
      } catch (e) { next(e) }
 }

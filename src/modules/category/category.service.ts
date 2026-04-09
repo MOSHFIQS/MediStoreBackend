@@ -1,4 +1,6 @@
+import { IQueryParams } from "../../interfaces/query.interface";
 import { prisma } from "../../lib/prisma"
+import { QueryBuilder } from "../../utils/QueryBuilder";
 
 
 const createCategory = async (payload: { name: string; description?: string; image?: string }) => {
@@ -28,18 +30,26 @@ const createCategory = async (payload: { name: string; description?: string; ima
 export default createCategory;
 
 
-const getAllCategories = async () => {
-     const categories = await prisma.category.findMany({
-          orderBy: { name: "asc" },
-          include: {
-               _count: {
-                    select: { medicines: true }
-               }
-          }
-     })
+const getAllCategories = async (query: IQueryParams = {}) => {
+     const queryBuilder = new QueryBuilder(prisma.category, query, {
+          searchableFields: ['name'], // search categories by name
+          filterableFields: [],       // add any filterable fields if needed
+     });
 
-     return categories
-}
+     const result = await queryBuilder
+          .search() // search by name
+          .filter() // currently no filterable fields, but keeps consistent API
+          .include({
+               _count: {
+                    select: { medicines: true } // include medicine counts
+               }
+          })
+          .sort()
+          .paginate()
+          .execute();
+
+     return result;
+};
 
 
 // Update category
