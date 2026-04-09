@@ -7,7 +7,6 @@ model Medicine {
      price                Float
      discountPrice        Float?
      stock                Int      @default(0)
-     image                String?
      images               String[] // additional gallery images
      manufacturer         String?
      brand                String?

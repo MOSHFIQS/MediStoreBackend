@@ -8,7 +8,6 @@ interface CreateMedicinePayload {
      price: number
      discountPrice?: number
      stock: number
-     image?: string
      images?: string[]
      manufacturer?: string
      brand?: string
