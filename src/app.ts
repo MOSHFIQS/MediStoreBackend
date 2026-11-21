@@ -44,8 +44,18 @@ app.use(express.json())
 app.use("/api", router)
 
 app.get("/", (req: Request, res: Response) => {
-     res.send("Hello, World!");
-})
+     res.json({
+          status: "success",
+          message: "MediStore API is running smoothly!",
+     });
+});
+
+app.get("/api", (req: Request, res: Response) => {
+     res.json({
+          status: "success",
+          message: "MediStore API is running smoothly!",
+     });
+});
 
 app.use(notFound)
 
