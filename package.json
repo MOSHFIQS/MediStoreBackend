@@ -9,7 +9,7 @@
           "migrate": "prisma migrate dev",
           "generate": "prisma generate",
           "studio": "prisma studio",
-          "build": "prisma generate && tsup src/index.ts --format esm --platform node --target node20 --outDir api --external pg-native",
+          "build": "prisma generate",
           "postinstall": "prisma generate"
      },
      "keywords": [],

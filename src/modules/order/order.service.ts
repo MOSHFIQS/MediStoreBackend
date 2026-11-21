@@ -259,7 +259,7 @@ const getOrderById = async (id: string, customerId: string) => {
      const order = await prisma.order.findFirst({
           where: { id, customerId },
           include: {
-               items: { include: { medicine: { select: { id: true, name: true, image: true } } } },
+               items: { include: { medicine: { select: { id: true, name: true, images: true } } } },
                address: true,
                payment: true,
                coupon: true,

@@ -12,20 +12,26 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 app.use(cors({
      origin: function (origin, callback) {
+          const envFrontend = envVars.FRONTEND_URL ? envVars.FRONTEND_URL.trim() : "";
           const allowedOrigins = [
-               envVars.FRONTEND_URL, "http://localhost:3000",
+               envFrontend,
+               "http://localhost:3000",
                "http://localhost:3001",
+               "http://localhost:5173",
                "https://sandbox.sslcommerz.com",
                "https://securepay.sslcommerz.com",
           ];
 
           if (!origin) return callback(null, true);
 
-          if (allowedOrigins.includes(origin)) {
-               callback(null, true);
-          } else {
-                 callback(null, true);
+          if (
+               allowedOrigins.includes(origin) ||
+               allowedOrigins.includes("*") ||
+               origin.endsWith(".vercel.app")
+          ) {
+               return callback(null, true);
           }
+          return callback(null, true);
      },
      credentials: true,
 }));

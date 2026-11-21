@@ -24,9 +24,10 @@ interface EnvConfig {
 }
 
 const loadEnvVariables = (): EnvConfig => {
+     if (!process.env.NODE_ENV) process.env.NODE_ENV = "development";
+     if (!process.env.PORT) process.env.PORT = "4000";
+
      const requireEnvVariable = [
-          "NODE_ENV",
-          "PORT",
           "DATABASE_URL",
           "JWT_SECRET",
           "FRONTEND_URL",
