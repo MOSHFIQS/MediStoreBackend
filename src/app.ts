@@ -22,7 +22,7 @@ app.use(cors({
                "https://securepay.sslcommerz.com",
           ];
 
-          if (!origin) return callback(null, true);
+          if (!origin) return callback(null, true); 
 
           if (
                allowedOrigins.includes(origin) ||
